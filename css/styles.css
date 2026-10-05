@@ -57,7 +57,7 @@ button { cursor: pointer; }
   padding: 12px 18px; background: var(--bar); backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
-.mark { font-family: var(--serif); font-style: italic; font-size: 25px; color: var(--gold-ink); letter-spacing: 0.01em; }
+.mark { text-decoration: none; font-family: var(--serif); font-style: italic; font-size: 25px; color: var(--gold-ink); letter-spacing: 0.01em; }
 .season-chip { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); text-align: right; }
 .body { max-width: 680px; margin: 0 auto; padding-block: 20px 110px; padding-inline: 18px; }
 .stack { display: flex; flex-direction: column; gap: 12px; }
@@ -160,6 +160,19 @@ p { margin: 0 0 10px; }
 .switch input:checked + span::after { transform: translateX(19px); }
 .switch input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
 
+/* ── diary ── */
+.seg { display: flex; gap: 8px; }
+.seg button { flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-family: var(--serif); font-size: 19px; color: var(--dim); text-align: left; }
+.seg button em { display: block; font-family: var(--sans); font-style: normal; font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; margin-top: 1px; }
+.seg button[aria-selected="true"] { color: var(--ink); border-color: var(--gold-pale); background: var(--gold-soft); }
+.datebar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.dayname { font-family: var(--serif); font-size: 20px; font-weight: 500; flex: 1 1 160px; text-align: center; min-width: 0; }
+.gline { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.gline .in { flex: 1; min-width: 0; }
+.gnum { flex: 0 0 26px; font-family: var(--serif); font-style: italic; font-size: 18px; color: var(--gold-ink); text-align: right; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; }
+.check input { width: 20px; height: 20px; accent-color: var(--gold); }
+
 /* ── fields ── */
 .ringhead { margin-top: 14px; }
 .field .field-head { padding: 13px 15px; }
@@ -261,6 +274,10 @@ details.entry p { font-size: 14.5px; margin: 6px 0 0; color: var(--ink2); }
   .book h3 { font-size: 14pt; font-weight: 400; font-style: italic; margin: 13pt 0 4pt; }
   .book p { margin: 0 0 6pt; white-space: pre-wrap; }
   .ba { page-break-inside: avoid; margin-bottom: 9pt; }
+  .bday { margin-bottom: 20pt; }
+  .bday h2 { font-size: 16pt; margin-bottom: 6pt; }
+  .book ol, .book ul { margin: 0 0 6pt; padding-left: 16pt; }
+  .book li { margin-bottom: 2pt; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::after { animation: none !important; transition: none !important; }
