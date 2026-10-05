@@ -1,8 +1,8 @@
-# The bridge: from booklet to app
+# The bridge: from book to app
 
-Every screen is a chapter of *Illuminated: The Image of God, Embodied* in working form.
+Every screen is a chapter of *Illuminated: The Image of God, Embodied* (59 pages) in working form.
 
-| In the booklet | In the app | In the code |
+| In the book | In the app | In the code |
 | --- | --- | --- |
 | 1. One Light | The rose window on Today | `rose()` in `js/app.js` |
 | 2. The Light Made Flesh | Diary → Examen, step 5: sin, wound, limit | `IL.EXAMEN` in `js/data.js` |
@@ -22,3 +22,11 @@ Every screen is a chapter of *Illuminated: The Image of God, Embodied* in workin
 - **Four movements** in every field: Receive, Bless, Spend, Return. *Spend* can be placed straight into the Rule.
 - **Five lights** per field: not yet begun, kindled, shining, burning, radiant. A light records practice. It does not measure grace.
 - **Six laws**: grace first; gift before task; the picture of the Master; one field at a time; begin again; the test is love of neighbour.
+
+## Companions
+
+The app links out to the prayer apps people already use (Laudate, Divine Office, Ascension, Hallow). These are independent works, and Illuminated Life is not affiliated with them.
+
+## A note on authority
+
+The book and the app are a private work of formation. They are not an official text of the Church and carry no imprimatur. The text awaits review by a priest and is submitted to the Church's judgement.
