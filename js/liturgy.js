@@ -8,6 +8,10 @@ window.IL = window.IL || {};
   const pad = (n) => String(n).padStart(2, "0");
   const iso = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
   const shift = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  // Whole days, counted from calendar dates in UTC, so a clock change never moves the count.
+  const dayNumber = (d) => Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+  const dayOfYear = (d) => dayNumber(d) - Math.round(Date.UTC(d.getFullYear(), 0, 0) / 86400000);
+  const daysBetween = (a, b) => dayNumber(b) - dayNumber(a);
 
   function easter(y) {
     const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4;
@@ -34,16 +38,16 @@ window.IL = window.IL || {};
   const SEASONS = {
     advent: { name: "Advent", colour: "Violet", asks: "Silence and waiting. Remove one source of noise." },
     christmas: { name: "Christmastide", colour: "White and gold", asks: "Feast without guilt. Keep all the days, to the Baptism of the Lord." },
-    lent: { name: "Lent", colour: "Violet", asks: "Prayer, fasting and almsgiving: all three, or it is not Lent." },
-    triduum: { name: "The Three Days", colour: "Red, then white", asks: "Clear the calendar. The whole year is built around these days." },
+    lent: { name: "Lent", colour: "Violet", asks: "Prayer, fasting and almsgiving, the three together. Begin with conversion of heart.",
+      more: "The Church asks first for conversion of heart. Keep the fast, give the alms, say the prayer, and let the heart follow." },
+    triduum: { name: "The Three Days", colour: "White, red, then white", asks: "Clear the calendar. The whole year is built around these days." },
     easter: { name: "Eastertide", colour: "White and gold", asks: "Fifty days of feasting. Rejoicing on purpose is obedience." },
     ordinary: { name: "Ordinary Time", colour: "Green", asks: "The long green stretch where holiness is actually built." }
   };
 
   function seasonOn(dt) {
     const p = plan(dt.getFullYear());
-    const at = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-    const t = at(dt);
+    const at = dayNumber, t = at(dt);
     if (t >= at(p.advent) && t < at(p.xmas)) return "advent";
     if (t >= at(p.xmas) || t <= at(p.baptism)) return "christmas";
     if (t >= at(p.ash) && t < at(p.holyThu)) return "lent";
@@ -63,6 +67,22 @@ window.IL = window.IL || {};
     [12, 8, "The Immaculate Conception"], [12, 14, "St John of the Cross"], [12, 25, "The Nativity of the Lord"]
   ];
 
+  // Three solemnities give way to Sundays of Advent and Lent, to Holy Week and to the Easter Octave.
+  function transfer(p, m, d, date) {
+    const n = dayNumber(date), palm = dayNumber(p.palm), east = dayNumber(p.easter), second = dayNumber(p.mercy);
+    const sunday = date.getDay() === 0;
+    if (m === 3 && d === 25) {
+      if (n >= palm && n <= second) return shift(p.mercy, 1); // Monday after the Second Sunday of Easter
+      if (sunday) return shift(date, 1);
+    }
+    if (m === 3 && d === 19) {
+      if (n >= palm && n < east) return shift(p.palm, -1); // Saturday before Palm Sunday
+      if (sunday) return shift(date, 1);
+    }
+    if (m === 12 && d === 8 && sunday) return shift(date, 1);
+    return date;
+  }
+
   function feasts(y) {
     const p = plan(y);
     const moving = [
@@ -72,9 +92,14 @@ window.IL = window.IL || {};
       [p.trinity, "The Most Holy Trinity"], [p.corpus, "Corpus Christi"], [p.heart, "The Sacred Heart"],
       [p.king, "Christ the King"], [p.advent, "First Sunday of Advent"]
     ].map(([d, name]) => ({ date: iso(d), name }));
-    const fixed = FIXED.map(([m, d, name]) => ({ date: iso(new Date(y, m - 1, d)), name }));
+    const fixed = FIXED.map(([m, d, name]) => {
+      const kept = transfer(p, m, d, new Date(y, m - 1, d));
+      const out = { date: iso(kept), name };
+      if (kept.getMonth() !== m - 1 || kept.getDate() !== d) out.moved = true;
+      return out;
+    });
     return moving.concat(fixed).sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  IL.liturgy = { iso, shift, easter, plan, SEASONS, seasonOn, feasts };
+  IL.liturgy = { iso, shift, dayOfYear, daysBetween, easter, plan, SEASONS, seasonOn, feasts };
 })();

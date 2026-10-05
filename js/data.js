@@ -157,7 +157,7 @@ IL.LAWS = [
   ["Grace comes first, always.", "Every good act begins in God's initiative. Even our preparing to receive grace is already a work of grace. Effort is real, and it is always a response."],
   ["Gift comes before task.", "Your worth was settled before the work began. The steward works from dignity and not toward it."],
   ["The picture of the Master governs everything.", "The servant who buried his talent said: I knew you to be a hard man, and I was afraid. When a field has gone dark, look first at what you believe God is like there."],
-  ["One field at a time.", "God teaches by stages. Choose one field for a season of about ninety days, and leave the others alone."],
+  ["One field at a time.", "God teaches by stages. Choose one field for a season of about ninety days. Add nothing new in the other eleven. Their ordinary duties still hold."],
   ["Begin again, without penalty.", "No streaks, no score, nothing to catch up. When you fall, you begin again where you are. His mercies are new every morning."],
   ["The test is love of neighbour.", "Every inner gain must show in the outer ring. If you are surer of God's favour and less patient at your own table, nothing has happened yet."]
 ];
@@ -172,6 +172,7 @@ IL.PRECEPTS = [
 
 IL.PRAYERS = [
   ["Morning offering", "Father, everything I will touch today is yours before it is mine. I receive this day from your hand. Set my loves in order. Let me spend what you have given, and bring it back to you tonight. Through Christ our Lord. Amen."],
+  ["To the Holy Spirit", "Come, Holy Spirit. I cannot set my own loves in order. Pour the love of God into my heart, and make me quick to follow where you lead. Amen."],
   ["For the field I have been avoiding", "Master, you entrusted this to me, and I have buried it because I was afraid. You are not a hard master. Show me the first small thing, and stay with me while I do it. Amen."],
   ["In a dark season", "God beyond feeling, I do not sense you. I choose you anyway. Let that count as prayer. Amen."],
   ["At night", "Into your hands, Lord, I commend my spirit. What I finished is yours. What I did not finish is yours too. Amen."]
@@ -205,7 +206,9 @@ IL.EXAMEN = [
   { id: "thanks", name: "Give thanks", text: "Name one good thing from today, however small. Always begin here.", field: "thanks", ph: "One good thing." },
   { id: "light", name: "Ask for light", text: "Lord, show me today as you saw it, with your eyes, which are kinder than mine." },
   { id: "review", name: "Walk through the day", text: "Where were you most alive and most yourself? Where were you tight, afraid or false? Notice. Do not prosecute.", field: "alive", ph: "Where I was alive.", field2: "tight", ph2: "Where I was tight or false." },
-  { id: "sort", name: "Tell them apart", text: "Of the hard moments: which was sin, a free choice against love? Which was a wound, an old alarm going off? Which was simply a limit: tiredness, hunger, being a creature? A word is enough. You may leave these blank.", field: "sin", ph: "Sin: for God's mercy, and confession if grave.", field2: "wound", ph2: "Wound: for healing.", field3: "limit", ph3: "Limit: for rest." },
+  { id: "sort", name: "Tell them apart", text: "Of the hard moments: which was sin, a free choice against love? Which was a wound, an old alarm going off? Which was simply a limit: tiredness, hunger, being a creature? A word is enough. You may leave these blank.", mem: "mercy", memLabel: "For mercy", memPh: "A word is enough.",
+    memNote: "Sin goes on to confession. A confessor judges what you cannot.", memSmall: "This line is not saved.",
+    field2: "wound", ph2: "Wound: for healing.", field3: "limit", ph3: "Limit: for rest." },
   { id: "mercy", name: "Receive mercy", text: "For sin, ask forgiveness and accept it, once. For the wound, ask for healing. For the limit, ask for rest." },
   { id: "tomorrow", name: "Look ahead", text: "One thing tomorrow asks of you. Name it, and ask for grace for that one thing.", field: "tomorrow", ph: "Tomorrow's one thing." },
   { id: "close", name: "Close", text: "Into your hands I commend my spirit. Then stop." }
@@ -231,3 +234,32 @@ IL.DEFAULT_RULE = [
   ["monthly", "One hour with the figures", "", "What came in, what went out, what was given.", "money"],
   ["yearly", "A retreat, even a short one", "", "Silence, with the phone left behind.", "soul"]
 ];
+
+/* Companions: other Catholic apps that give the prayers themselves.
+   Independent works. Text links only, to each app's own public page. */
+IL.COMPANIONS = [
+  { id: "laudate", name: "Laudate",
+    good: "The readings of the day, common prayers, the rosary and an examination of conscience, in many languages. Free.",
+    fields: ["soul", "mind"], anchors: "Morning and midday",
+    url: "https://apps.apple.com/us/app/laudate-1-catholic-app/id499428207",
+    where: "App Store page. On Android, search your app store for Laudate." },
+  { id: "divineoffice", name: "Divine Office",
+    good: "The Liturgy of the Hours for each day, with audio you can pray along with.",
+    fields: ["soul", "time"], anchors: "Morning, evening and night",
+    url: "https://divineoffice.org/", where: "divineoffice.org" },
+  { id: "ascension", name: "Ascension",
+    good: "The Bible in a Year, the Catechism in a Year, and the daily readings with reflections.",
+    fields: ["mind", "soul"], anchors: "Morning, or a fixed reading time",
+    url: "https://ascensionpress.com/pages/ascension-app", where: "ascensionpress.com" },
+  { id: "hallow", name: "Hallow",
+    good: "Guided audio prayer: the rosary, Lectio Divina, and prayer before sleep.",
+    fields: ["soul", "body"], anchors: "Any anchor, and the last minutes before sleep",
+    url: "https://hallow.com/", where: "hallow.com" }
+];
+
+/* Quiet suggestions beside the three anchors on Today. */
+IL.ANCHOR_HINTS = {
+  morning: [["Morning Prayer", "divineoffice"], ["The readings of the day", "laudate"]],
+  midday: [["The readings of the day", "laudate"], ["Today's Bible in a Year", "ascension"]],
+  evening: [["Evening Prayer", "divineoffice"], ["Guided prayer before sleep", "hallow"]]
+};
