@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lartedellamore.github.io/illuminated-life/sitemap.xml
