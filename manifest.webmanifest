@@ -1,0 +1,11 @@
+{
+  "name": "Illuminated Life",
+  "short_name": "Illuminated",
+  "description": "A Catholic rule of life across twelve fields of stewardship.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#FCFCFD",
+  "theme_color": "#FCFCFD",
+  "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
