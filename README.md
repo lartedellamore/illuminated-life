@@ -1,6 +1,8 @@
 # Illuminated Life
 
-A Catholic rule of life across twelve fields of stewardship. The companion app to the booklet *Illuminated: The Image of God, Embodied*.
+A Catholic rule of life across twelve fields of stewardship: a website, the book *Illuminated: The Image of God, Embodied*, and its companion app.
+
+Live: https://lartedellamore.github.io/illuminated-life/
 
 > One Master entrusts one steward with twelve fields in three rings.
 > In every field the same four movements take place: **receive, bless, spend, return.**
@@ -12,7 +14,7 @@ A Catholic rule of life across twelve fields of stewardship. The companion app t
 | **Today** | See the rose window (twelve petals, one per field), your field for the season, and today's practices. Floor mode reduces the day to three lines for hard weeks. |
 | **Fields** | Open any of the twelve fields: what it is for, its disorder, questions to examine, the four movements, and a ladder of four rungs. |
 | **Rule** | Your floor, your daily, weekly, monthly and yearly practices, your parish and your three people, and the precepts of the Church. Export to your calendar or print as a booklet. |
-| **Examen** | A gentle eight-step evening review that tells sin, wound and limit apart. |
+| **Diary** | Seven things you are grateful for, three you are praying for, one act of service, and where you saw light. Save it as a PDF. The evening Examen lives here too. |
 | **More** | The Steward's Model, the season review, the Church's year, the Treasury, prayers, and backup. |
 
 ## Design promises
@@ -26,11 +28,15 @@ A Catholic rule of life across twelve fields of stewardship. The companion app t
 
 ## How it is built
 
-Plain HTML, CSS and JavaScript. No framework, no build step, no dependencies. Open `index.html` in a browser and it runs.
+Plain HTML, CSS and JavaScript. No framework, no build step, no dependencies. Open `index.html` (the website) or `app.html` (the app) in a browser and it runs.
 
 ```
-index.html              the page shell
-css/styles.css          the design system (colours, type, components; light and dark)
+index.html              the website (landing page for the book and the app)
+css/site.css            the website's styles
+app.html                the app's page shell
+css/styles.css          the app's design system (colours, type, components; light and dark)
+book/illuminated.pdf    the book
+assets/                 cover and screenshots used by the website
 js/data.js              every word the app says: fields, laws, prayers, verses
 js/liturgy.js           the Church's year: Easter, the seasons, the feasts
 js/app.js               state, screens and events
