@@ -44,7 +44,7 @@
       floor: ["Two minutes of prayer, morning and night", "Sunday Mass", "One honest conversation a week"],
       floorMode: false, floorDay: { date: "", done: [false, false, false] },
       church: { parish: "", confession: "monthly", ahead: "", beside: "", behind: "", shownTo: "", shownOn: "" },
-      diary: {},
+      diary: {}, journal: {},
       treasury: { currency: "€", income: "", buckets: BUCKETS.map(([name, note, pct]) => ({ name, note, pct })) }
     };
   }
@@ -69,7 +69,7 @@
   // Never lose the last keystroke when the app is closed or put in the background.
   window.addEventListener("pagehide", writeNow);
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") writeNow(); });
-  const ui = { tab: "today", sub: null, open: null, gild: null, toast: null, showPrayer: false };
+  const ui = { tab: "today", sub: null, open: null, gild: null, toast: null, showPrayer: false, day: null, diaryView: "diary", printKind: "rule", printRange: "month" };
 
   function setPath(path, value) {
     if (path.startsWith("rule:")) {
@@ -182,6 +182,8 @@
         ${day >= 90 ? `<div class="pane lit pad"><span class="rub">The season is complete</span><p>Ninety days with one field. Give thanks, look again at the twelve, and ask which field is next.</p><button class="gold-btn" data-act="sub" data-s="review">Review the season</button></div>` : ""}`;
     }
 
+    const jt = jGet(d), nThanks = Object.values(jt.g || {}).filter(Boolean).length;
+    h += `<button class="pane row link-row" data-act="opendiary">${badge("pen", nThanks > 0)}<span class="rowtext"><b>Today's diary</b><span>${nThanks ? "Begun. Seven thanks, three prayers, one act of service." : "Seven thanks, three prayers, one act of service."}</span></span>${icon("chev", 18)}</button>`;
     h += `<div class="pane pad switchrow"><div><b>Floor mode</b><p class="note">For hard weeks. Today shows only your three floor lines. Nothing is counted against you.</p></div>
       <label class="switch"><input type="checkbox" id="floor-mode" data-toggle="floorMode" ${state.floorMode ? "checked" : ""} aria-label="Floor mode"><span></span></label></div>`;
 
@@ -287,6 +289,7 @@
     const d = todayISO(), e = state.diary[d] || {};
     const past = Object.keys(state.diary).filter((k) => k !== d && Object.values(state.diary[k]).some(Boolean)).sort().reverse().slice(0, 60);
     return `<section class="stack rise"><h1 class="h1">Evening Examen</h1>
+      ${diarySeg()}
       <p class="lede">Five minutes. Gentle. This is medicine, not an audit. If a step distresses you, skip it.</p>
       <div class="pane pad">${EXAMEN.map((s, i) => `<div class="step"><h3 class="h3"><span class="n">${i + 1}</span>${s.name}</h3><p>${esc(s.text)}</p>
         ${s.field ? area(`diary.${d}.${s.field}`, e[s.field], s.ph, "") : ""}${s.field2 ? area(`diary.${d}.${s.field2}`, e[s.field2], s.ph2, "") : ""}${s.field3 ? area(`diary.${d}.${s.field3}`, e[s.field3], s.ph3, "") : ""}</div>`).join("")}</div>
@@ -295,6 +298,73 @@
         return `<details class="entry"><summary>${esc(fromISO(k).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</summary>
         ${[["Thanks", x.thanks], ["Alive", x.alive], ["Tight", x.tight], ["Sin", x.sin], ["Wound", x.wound], ["Limit", x.limit], ["Tomorrow", x.tomorrow]].filter((p) => p[1]).map((p) => `<p><span class="rub inl">${p[0]}</span>${esc(p[1])}</p>`).join("")}</details>`; }).join("")}</div>` : ""}
     </section>`;
+  }
+
+
+  /* ───────── Diary: seven thanks, three prayers, one act of service ───────── */
+  const diarySeg = () => `<div class="seg" role="tablist">${[["diary", "Diary", "thanks, prayer, service"], ["examen", "Examen", "the evening review"]].map(([v, t, e]) => `<button role="tab" data-act="diaryview" data-v="${v}" aria-selected="${ui.diaryView === v}">${t}<em>${e}</em></button>`).join("")}</div>`;
+  const jGet = (d) => state.journal[d] || {};
+  const jHas = (j) => !!(j && (Object.values(j.g || {}).some(Boolean) || Object.values(j.p || {}).some(Boolean) || j.service || j.light || j.word));
+  const longDate = (iso) => fromISO(iso).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const ROMAN7 = ["i", "ii", "iii", "iv", "v", "vi", "vii"];
+
+  function Diary() {
+    if (ui.diaryView === "examen") return Examen();
+    const t = todayISO(), d = ui.day && ui.day <= t ? ui.day : t, j = jGet(d), g = j.g || {}, pr = j.p || {};
+    const now = new Date(), v = VERSES[Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000) % VERSES.length];
+    const yest = L.iso(L.shift(fromISO(d), -1)), yp = jGet(yest).p || {};
+    const canCarry = !Object.values(pr).some(Boolean) && Object.values(yp).some(Boolean);
+    const past = Object.keys(state.journal).filter((k) => k !== d && jHas(state.journal[k])).sort().reverse().slice(0, 90);
+    return `<section class="stack rise"><h1 class="h1">Diary</h1>
+      ${diarySeg()}
+      <p class="lede">Seven thanks, three prayers, one act of service. A few minutes, any time of day.</p>
+      <div class="pane quiet pad datebar"><button class="pill" data-act="dayshift" data-n="-1" aria-label="The day before">Earlier</button>
+        <b class="dayname">${esc(longDate(d))}</b>
+        ${d === t ? `<span class="tag">Today</span>` : `<button class="pill gold" data-act="daytoday">Today</button>`}</div>
+      <div class="pane pad"><span class="rub">Receive</span><h2 class="h2">Seven things I am grateful for</h2>
+        <p class="sub">Name them one by one. Small ones count. Gratitude is the plain recognition that this was not mine first.</p>
+        <div class="mt">${ROMAN7.map((r, i) => `<div class="gline"><span class="gnum">${r}</span><input class="in" id="g-${i}" data-bind="journal.${d}.g.${i}" value="${esc(g[i])}" placeholder="${i === 0 ? "Thank you for…" : ""}" aria-label="Gratitude ${i + 1}"></div>`).join("")}</div></div>
+      <div class="pane pad"><span class="rub">Ask</span><h2 class="h2">Three things I am praying for</h2>
+        <p class="sub">A person, a need, a grace. Name them, and hand them over.</p>
+        <div class="mt">${[0, 1, 2].map((i) => `<div class="gline"><span class="gnum">${ROMAN7[i]}</span><input class="in" id="p-${i}" data-bind="journal.${d}.p.${i}" value="${esc(pr[i])}" placeholder="${i === 0 ? "Lord, I bring you…" : ""}" aria-label="Prayer intention ${i + 1}"></div>`).join("")}</div>
+        ${canCarry ? `<button class="pill gold" data-act="carry" data-d="${d}">Carry yesterday's three forward</button>` : ""}</div>
+      <div class="pane pad"><span class="rub">Spend</span><h2 class="h2">One act of service</h2>
+        <p class="sub">For whom, and what. Small, concrete, and unannounced.</p>
+        <div class="mt">${input(`journal.${d}.service`, j.service, "Today I will…", "")}</div>
+        <label class="check"><input type="checkbox" id="svc-done" data-check="journal.${d}.serviceDone" ${j.serviceDone ? "checked" : ""}><span>Done, and given back to God</span></label></div>
+      <div class="pane pad"><span class="rub">Return</span><h2 class="h2">Where I saw light today</h2>
+        ${area(`journal.${d}.light`, j.light, "A moment, a face, a sentence. Where God was near.", "", 2)}
+        ${input(`journal.${d}.word`, j.word, v.t, "A word I am carrying")}
+        <p class="note">If the line is empty, today's verse is offered: ${esc(v.r)}.</p></div>
+      <div class="pane lit pad"><span class="rub">Keep it</span><h2 class="h2">Save my diary as a PDF</h2>
+        ${PREVIEW ? `<p class="sub">In the full app you can save your diary as a PDF booklet, by day, week or month.</p>` : `<p class="sub">Choose what to include. In the window that opens, choose <b>Save as PDF</b> (on iPhone: Share, then Print, then pinch the preview open and share it).</p>
+        <div class="btnrow mt"><select class="in fix" id="print-range" aria-label="What to include" style="width:auto">${[["day", "This day"], ["week", "The last seven days"], ["month", "The last thirty days"], ["all", "Everything"]].map(([k, l]) => `<option value="${k}" ${ui.printRange === k ? "selected" : ""}>${l}</option>`).join("")}</select>
+        <button class="gold-btn" data-act="printdiary" data-d="${d}">Save as PDF</button></div>`}
+        <p class="note mt">Your diary stays on this device. Nothing is sent anywhere.</p></div>
+      ${past.length ? `<h2 class="h2 mt">Earlier days</h2><div class="pane pad">${past.map((k) => { const x = state.journal[k];
+        return `<details class="entry"><summary>${esc(longDate(k))}</summary>
+          ${Object.values(x.g || {}).filter(Boolean).length ? `<p><span class="rub inl">Thanks</span>${Object.values(x.g).filter(Boolean).map(esc).join(" · ")}</p>` : ""}
+          ${Object.values(x.p || {}).filter(Boolean).length ? `<p><span class="rub inl">Prayer</span>${Object.values(x.p).filter(Boolean).map(esc).join(" · ")}</p>` : ""}
+          ${x.service ? `<p><span class="rub inl">Service</span>${esc(x.service)}${x.serviceDone ? " (done)" : ""}</p>` : ""}
+          ${x.light ? `<p><span class="rub inl">Light</span>${esc(x.light)}</p>` : ""}
+          <p><button class="link" data-act="dayopen" data-d="${k}">Open this day</button></p></details>`; }).join("")}</div>` : ""}
+    </section>`;
+  }
+
+  function DiaryBook() {
+    const t = todayISO(), d = ui.day && ui.day <= t ? ui.day : t, span = { day: 0, week: 6, month: 29 }[ui.printRange];
+    const from = span == null ? "0000" : L.iso(L.shift(fromISO(d), -span));
+    const days = Object.keys(state.journal).filter((k) => jHas(state.journal[k]) && (ui.printRange === "all" || (k >= from && k <= d))).sort();
+    const list = (o) => Object.values(o || {}).filter(Boolean);
+    return `<div class="bp bcover"><p>A DIARY OF GRATITUDE</p><h1>Illuminated Life</h1><p><i>Receive, bless, spend, return.</i></p>
+        <p>${days.length ? esc(days.length === 1 ? longDate(days[0]) : pretty(fromISO(days[0])) + " to " + longDate(days[days.length - 1])) : ""}</p></div>
+      <div class="bp">${days.length ? days.map((k) => { const x = state.journal[k];
+        return `<div class="ba bday"><h2>${esc(longDate(k))}</h2>
+          ${list(x.g).length ? `<h3>I am grateful for</h3><ol>${list(x.g).map((v) => `<li>${esc(v)}</li>`).join("")}</ol>` : ""}
+          ${list(x.p).length ? `<h3>I am praying for</h3><ul>${list(x.p).map((v) => `<li>${esc(v)}</li>`).join("")}</ul>` : ""}
+          ${x.service ? `<h3>An act of service</h3><p>${esc(x.service)}${x.serviceDone ? " (done)" : ""}</p>` : ""}
+          ${x.light ? `<h3>Where I saw light</h3><p>${esc(x.light)}</p>` : ""}
+          ${x.word ? `<h3>A word I am carrying</h3><p><i>${esc(x.word)}</i></p>` : ""}</div>`; }).join("") : "<p>No diary pages in this range yet.</p>"}</div>`;
   }
 
   /* ───────── More ───────── */
@@ -394,6 +464,7 @@
 
   /* ───────── the printed booklet ───────── */
   function Book() {
+    if (ui.printKind === "diary") return DiaryBook();
     const F = state.focus ? fieldById(state.focus.field) : null, c = state.church;
     const by = (cad) => state.rule.filter((r) => r.cadence === cad).map((r) => `<p>${esc([r.time, r.text].filter(Boolean).join("  "))}</p>`).join("");
     return `<div class="bp bcover"><p>A RULE OF LIFE</p><h1>Illuminated Life</h1><p><i>Receive, bless, spend, return.</i></p><p>${esc(new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }))}</p></div>
@@ -405,11 +476,11 @@
   }
 
   /* ───────── render ───────── */
-  const NAV = [["today", "Today", "calendar"], ["fields", "Fields", "grid"], ["rule", "Rule", "scroll"], ["examen", "Examen", "moon"], ["more", "More", "more"]];
+  const NAV = [["today", "Today", "calendar"], ["fields", "Fields", "grid"], ["rule", "Rule", "scroll"], ["diary", "Diary", "pen"], ["more", "More", "more"]];
   function render() {
     const S = L.SEASONS[L.seasonOn(new Date())];
-    const screen = { today: Today, fields: Fields, rule: Rule, examen: Examen, more: More }[ui.tab]();
-    root.innerHTML = `<header class="top"><span class="mark">Illuminated Life</span><span class="season-chip">${esc(S.name)}</span></header>
+    const screen = { today: Today, fields: Fields, rule: Rule, diary: Diary, examen: Examen, more: More }[ui.tab]();
+    root.innerHTML = `<header class="top">${PREVIEW ? `<span class="mark">Illuminated Life</span>` : `<a class="mark" href="index.html" title="About the book and the app">Illuminated Life</a>`}<span class="season-chip">${esc(S.name)}</span></header>
       <main class="body" id="main">${screen}</main>
       <div class="toast" id="toast" role="status" ${ui.toast ? "" : "hidden"}>${esc(ui.toast || "")}</div>
       <nav class="tabbar" aria-label="Sections">${NAV.map(([id, label, ic]) => `<button data-act="tab" data-t="${id}" ${ui.tab === id ? 'aria-current="page"' : ""}>${icon(ic, 22)}<span>${label}</span></button>`).join("")}</nav>
@@ -463,7 +534,14 @@
       state.rule.push({ id: uid(), cadence: document.getElementById("new-cad").value, text, time: document.getElementById("new-time").value, note: "", field: document.getElementById("new-field").value, done: null }); save(); render(); flash("Added to your Rule"); },
     delrule: (el) => { state.rule = state.rule.filter((r) => r.id !== el.dataset.id); save(); render(); },
     ics: () => { download("illuminated-life-rule.ics", makeICS(), "text/calendar"); flash("Calendar file saved. Open it to add your rule."); },
-    print: () => window.print(),
+    print: () => { ui.printKind = "rule"; render(); setTimeout(() => window.print(), 60); },
+    printdiary: (el) => { const sel = document.getElementById("print-range"); ui.printRange = sel ? sel.value : "month"; ui.day = el.dataset.d; ui.printKind = "diary"; writeNow(); render(); setTimeout(() => window.print(), 60); },
+    diaryview: (el) => { ui.diaryView = el.dataset.v; render(); window.scrollTo(0, 0); },
+    dayshift: (el) => { const t = todayISO(), cur = ui.day && ui.day <= t ? ui.day : t; ui.day = L.iso(L.shift(fromISO(cur), Number(el.dataset.n))); render(); },
+    daytoday: () => { ui.day = null; render(); },
+    opendiary: () => { ui.day = null; ui.diaryView = "diary"; go("diary"); },
+    dayopen: (el) => { ui.day = el.dataset.d; render(); window.scrollTo(0, 0); },
+    carry: (el) => { const d = el.dataset.d, y = jGet(L.iso(L.shift(fromISO(d), -1))).p || {}; setPath("journal." + d + ".p", Object.assign({}, y)); save(); render(); flash("Carried forward"); },
     download: () => { download("illuminated-life-backup-" + todayISO() + ".json", JSON.stringify(state, null, 2), "application/json"); flash("Backup saved"); },
     copybackup: () => { const text = JSON.stringify(state), out = document.getElementById("backup-out"); out.hidden = false; out.value = text; out.focus(); out.select();
       (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => flash("Copied. Paste it somewhere safe."), () => flash("Select the text and copy it.")); },
@@ -481,6 +559,7 @@
   root.addEventListener("change", (e) => {
     const el = e.target;
     if (el.dataset.toggle) { state[el.dataset.toggle] = el.checked; save(); render(); }
+    if (el.dataset.check) { setPath(el.dataset.check, el.checked); save(); }
     if (el.id === "backup-file" && el.files[0]) { const fr = new FileReader(); fr.onload = () => restore(String(fr.result)); fr.readAsText(el.files[0]); }
   });
 
