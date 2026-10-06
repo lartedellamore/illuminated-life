@@ -912,7 +912,7 @@
     // The day's photographs, after its words: two to a row, each with its caption beneath.
     const pics = (k) => { if (!withPh) return ""; const figs = pList(k).map((p, i) => { const src = pUrl(p.id, true); return src ? `<figure class="bphoto"><img src="${esc(src)}" alt="${esc(pAlt(p, i))}">${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ""}</figure>` : ""; }).join("");
       return figs ? `<div class="bphotos">${figs}</div>` : ""; };
-    return `<div class="bp bcover"><p>A DIARY OF GRATITUDE</p><h1>Illuminated Life</h1><p><i>Receive, bless, spend, return.</i></p>
+    return `<div class="bp bcover"><p>A DIARY OF GRATITUDE</p><h1>Illuminated Life</h1><p><i>The beginning of eternal joy.</i></p><p><i>Receive, bless, spend, return.</i></p>
         <p>${days.length ? esc(days.length === 1 ? longDate(days[0]) : pretty(fromISO(days[0])) + " to " + longDate(days[days.length - 1])) : ""}</p></div>
       <div class="bp">${days.length ? days.map((k) => { const x = state.journal[k], vv = verseFor(fromISO(k));
         return `<div class="ba bday"><h2>${esc(longDate(k))}</h2><p class="blit">${esc(L.lineText(litDay(k)))}</p>
@@ -1160,7 +1160,7 @@
   }
 
   function About() {
-    return `<h1 class="h1">About this app</h1><div class="prose">
+    return `<span class="rub">Illuminated Life · the beginning of eternal joy</span><h1 class="h1">About this app</h1><div class="prose">
       <p class="lede">Self-knowledge in the presence of God, turned into times and places for love.</p>
       <p>Illuminated Life is the companion to the book <i>Illuminated: The Image of God, Embodied</i>. Every screen is a chapter of that book in working form. Read the theology first. Without it, this is only a task list with a candle on it.</p>
       <h2 class="h2 mt">What it promises</h2><ul class="plain"><li>It lights, and never scores. Dignity is not a metric.</li><li>It asks about one field. It adds nothing new in the other eleven. Their ordinary duties still hold.</li><li>It lets you begin again without penalty.</li><li>It sends you out of itself: to your parish, your confessor, your friends and the poor.</li><li>It keeps your words on your own device.</li></ul>
@@ -1182,7 +1182,7 @@
     if (ui.printKind === "day" && G) return G.dayBook();
     const F = state.focus ? fieldById(state.focus.field) : null, c = state.church;
     const by = (cad) => state.rule.filter((r) => r.cadence === cad).map((r) => `<p>${esc([r.time, r.text].filter(Boolean).join("  "))}</p>`).join("");
-    return `<div class="bp bcover"><p>A RULE OF LIFE</p><h1>Illuminated Life</h1><p><i>Receive, bless, spend, return.</i></p><p>${esc(fmt(new Date(), { day: "numeric", month: "long", year: "numeric" }))}</p></div>
+    return `<div class="bp bcover"><p>A RULE OF LIFE</p><h1>Illuminated Life</h1><p><i>The beginning of eternal joy.</i></p><p><i>Receive, bless, spend, return.</i></p><p>${esc(fmt(new Date(), { day: "numeric", month: "long", year: "numeric" }))}</p></div>
       <div class="bp"><h2>My floor</h2>${state.floor.filter(Boolean).map((t, i) => `<p>${i + 1}. ${esc(t)}</p>`).join("")}
         <h2 style="margin-top:18pt">My rule of life</h2><h3>Each day</h3>${by("daily")}<h3>Each week</h3>${by("weekly")}<h3>Each month</h3>${by("monthly")}<h3>Each year</h3>${by("yearly")}
         <h3>In the Body</h3><p>Parish: ${esc(c.parish)}</p><p>Confession: ${esc(c.confession)}</p><p>Ahead of me: ${esc(c.ahead)}   Beside me: ${esc(c.beside)}   Behind me: ${esc(c.behind)}</p><p>Shown to: ${esc(c.shownTo)} ${esc(c.shownOn)}</p></div>
