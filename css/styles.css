@@ -633,6 +633,42 @@ details.help .note { margin: 0 0 14px; }
 .chatbox .fieldset { margin-bottom: 8px; }
 .chatbox .btnrow { margin-bottom: 8px; }
 
+/* ── diary photographs ──
+   A quiet grid of square pictures. Everything that changes a picture is in the larger view, with words on every button. */
+.pgrid { list-style: none; margin: 14px 0 2px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; }
+.ptile { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.pthumb { display: block; width: 100%; aspect-ratio: 1 / 1; padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); cursor: pointer; }
+.pthumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.pthumb:hover { border-color: var(--gold); }
+.pthumb:focus-visible { border-radius: 12px; }
+.pwait { display: block; height: 100%; }
+.pgone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 100%; padding: 6px; font-size: 11.5px; line-height: 1.25; color: var(--dim); text-align: center; }
+.pcap { font-family: var(--serif); font-style: italic; font-size: 15.5px; line-height: 1.22; color: var(--ink2); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; padding: 0 2px; }
+.pbar { justify-content: space-between; margin-top: 14px; }
+.pcount { font-family: var(--serif); font-size: 19px; color: var(--dim); font-variant-numeric: lining-nums; white-space: nowrap; }
+.pmsg { margin: 12px 0 0; font-size: 14.5px; color: var(--ink2); overflow-wrap: anywhere; }
+.pmsg:empty { display: none; }
+.photos > .note { margin-top: 12px; }
+.photos .gold-btn { text-align: center; }
+.pmark { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; font-family: var(--sans); font-size: 12.5px; color: var(--dim); white-space: nowrap; vertical-align: 0.12em; font-variant-numeric: lining-nums; }
+.rowtext .pline { display: flex; align-items: center; gap: 6px; margin-top: 3px; color: var(--gold-ink); }
+.link.daydel { align-self: center; margin-top: -4px; }
+.note.gap { margin-top: 10px; }
+.bkphotos { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 8px; }
+.pview { padding-top: 8px; }
+.pv-frame { margin: 4px 0 14px; border-radius: 14px; overflow: hidden; background: var(--surface); display: grid; place-items: center; min-height: 150px; }
+.pv-frame img { display: block; max-width: 100%; max-height: min(56vh, 560px); width: auto; height: auto; object-fit: contain; }
+.pv-frame .note { padding: 20px; }
+.pview .fieldset { margin-bottom: 0; }
+.pview .btnrow { margin: 16px 0 0; }
+.pview .pv-nav { justify-content: space-between; }
+.pview .pv-acts { padding-top: 16px; border-top: 1px solid var(--line); }
+.pview .pv-rm { margin-left: auto; }
+.pview .confirm { margin-top: 16px; }
+.pview .confirm .btnrow { margin: 0; }
+.pill[aria-disabled="true"] { opacity: 0.45; cursor: default; }
+.pill[aria-disabled="true"]:hover { color: var(--ink2); border-color: var(--edge); }
+
 @media print {
   .top, .tabbar, .body, .toast, .update, .sheet, .sheet-back { display: none !important; }
   body { background: #fff; color: #000; }
@@ -651,6 +687,12 @@ details.help .note { margin: 0 0 14px; }
   .book .blit { font-size: 10.5pt; font-style: italic; margin: -3pt 0 8pt; }
   .book ol, .book ul { margin: 0 0 6pt; padding-left: 16pt; }
   .book li { margin-bottom: 2pt; }
+  /* The day's photographs: two to a row, none taller than about 60mm, the caption beneath. A picture is never cut by a page. */
+  .bphotos { margin: -8pt 0 20pt; font-size: 0; }
+  .bphoto { display: inline-block; vertical-align: top; width: calc(50% - 3mm); margin: 0 0 5mm; break-inside: avoid; page-break-inside: avoid; text-align: center; }
+  .bphoto:nth-child(odd) { margin-right: 6mm; }
+  .bphoto img { display: block; max-width: 100%; max-height: 60mm; width: auto; height: auto; margin: 0 auto; border-radius: 1.2mm; }
+  .bphoto figcaption { font-size: 9.5pt; font-style: italic; line-height: 1.3; margin-top: 1.6mm; overflow-wrap: anywhere; }
   /* The ring colours on paper: a thin rule and the numeral. Names and numerals carry the meaning in black and white. */
   .book { --person: #9E3B4D; --household: #2F5D8C; --world: #2E7257; }
   .bring { font-family: var(--sans); font-size: 8.5pt; letter-spacing: 0.16em; text-transform: uppercase; margin: 16pt 0 6pt !important; padding-bottom: 3pt; border-bottom: 1.2pt solid var(--rc); page-break-after: avoid; }
