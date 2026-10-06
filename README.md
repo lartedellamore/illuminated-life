@@ -95,3 +95,9 @@ The twelve fields are colour-coded by ring: ruby for the Person, sapphire for th
 - **The Icon Screen** (`js/icons.js`) is the five-panel iconography from *Accedite et Illuminamini*. Its items were written for this app and await a priest's review.
 - **Calendar**: the app exports `.ics` files. It cannot read or write a calendar account.
 - The picture of the model is a parish church: lamp, temple, house, field.
+
+## Guides and sources
+
+- `book/illuminated.pdf`: the book, typeset.
+- `book/illuminated.md`: the book's text as Markdown.
+- `guides/a-home-for-everything.pdf`: the setup plan for the twelve fields on a laptop and phone.
