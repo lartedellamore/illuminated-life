@@ -8,7 +8,7 @@ Oct 5, 2026 · @Wietske Hoencamp
 
 ## How to read this
 
-This booklet makes one claim and then builds a life on it. The claim: you are made in the image of God, that image is embodied, and every part of your ordinary life is the material in which it is meant to shine. Your sleep, your money, your calendar, your speech and your kitchen table are not beside the spiritual life. They are where it happens.
+This booklet makes one claim and then builds a life on it. The claim: you are made in the image of God, that image is embodied, and every part of your ordinary life is the material in which it is meant to shine. Your sleep, your finances, your calendar, your speech and your kitchen table are not beside the spiritual life. They are where it happens.
 
 It gathers two earlier works into one line of thought, and then draws a single model from them. *Imago Dei Incorporata* supplies the theology: the image given, made flesh, taken into a Body, and put to work. *Accedite et Illuminamini* supplies the path: illumination, the twelve fields of stewardship, the rule of life. Chapter 6 puts the whole of it on one page: one Master, one steward, twelve fields, four movements.
 
@@ -270,7 +270,7 @@ The calendar, commitments, rhythm, saying no. Your calendar is a more honest sta
 
 - **First step:** block the day of rest before anything else.
 
-### VI. Money
+### VI. Finance
 
 Earning, spending, saving, giving, debt. The Fathers call almsgiving a work of mercy and also a work of justice: not to share with the poor is to rob them \[CCC 2446-2447\].
 
@@ -386,7 +386,7 @@ The New Testament word for steward is *oikonomos*, the manager of a household. T
 
 **The Person: what I am.** Body, Mind, Soul, Heart. These are the four with which the great commandment asks us to love God: heart, soul, mind and strength (Mark 12:30). They come first because you cannot give what you have not received, and because the self is the first thing entrusted to you.
 
-**The Household: what I keep.** Time, Money, Work, Home. These are the steward's proper desk: the hours, the goods, the labour and the place put into your hands. Here love takes structure, or stays a feeling.
+**The Household: what I keep.** Time, Finance, Work, Home. These are the steward's proper desk: the hours, the goods, the labour and the place put into your hands. Here love takes structure, or stays a feeling.
 
 **The World: what I give.** Creation, Speech, Beauty and Making, Mission. This is the second half of the commandment, the neighbour, widened to the earth itself. Here the light leaves your hands.
 
@@ -692,7 +692,7 @@ This is the one format. It takes about an hour the first time, and it is the sam
 
 6.  **Fix three anchors in the day.** A morning offering before the phone. A midday pause, the Angelus or one deliberate breath and a word. An evening examen of five minutes.
 
-7.  **Mark the week, the month and the year.** Sunday Mass and real rest. Confession on a set interval. One review of money. The Church's seasons kept, with one thing added and one removed in Advent and Lent.
+7.  **Mark the week, the month and the year.** Sunday Mass and real rest. Confession on a set interval. One review of your finances. The Church's seasons kept, with one thing added and one removed in Advent and Lent.
 
 8.  **Check the Church's own minimum.** The five precepts are the floor beneath every floor: Mass on Sundays and holy days, confession at least once a year, Communion at least in the Easter season, the days of fasting and abstinence, and providing for the needs of the Church \[CCC 2041-2043\]. Illness, the care of infants and other serious reasons excuse from the Sunday obligation \[CCC 2181\].
 
