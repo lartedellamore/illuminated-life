@@ -16,7 +16,7 @@ Live: https://lartedellamore.github.io/illuminated-life/
 | **Fields** | Open any of the twelve fields: what it is for, its disorder, questions to examine, the four movements, and a ladder of four rungs. |
 | **Rule** | Your floor, your daily, weekly, monthly and yearly practices, your parish and your three people, and the precepts of the Church. Export to your calendar or print as a booklet. |
 | **Diary** | Seven things you are grateful for, three you are praying for, one act of service, and where you saw light. Save it as a PDF. The evening Examen lives here too. |
-| **More** | The Steward's Model, the season review, the Church's year, the Treasury, prayers, and backup. |
+| **More** | The Steward's Model, the season review, the Church's year (the whole General Roman Calendar), the Treasury, prayers, and backup. |
 
 ## Design promises
 
@@ -42,7 +42,8 @@ book/illuminated.pdf    the book (59 pages)
 assets/                 cover, screenshots and the share image (og.jpg) used by the website
 assets/fonts/           Cormorant Garamond and Inter, hosted here (no Google Fonts)
 js/data.js              every word the app says: fields, laws, prayers, verses
-js/liturgy.js           the Church's year: Easter, the seasons, the feasts
+js/liturgy.js           the Church's year: the General Roman Calendar, day by day
+js/calendar-data.js     the celebrations of the calendar (and the Netherlands)
 js/app.js               state, screens and events
 sw.js                   offline cache (works once the site is on https)
 manifest.webmanifest    lets a phone install it to the home screen
@@ -83,3 +84,7 @@ The app is not a spiritual director, a confessor or a diagnosis.
 ## Rights
 
 © Wietske Hoencamp. All rights reserved unless a licence is added here.
+
+## Colours
+
+The twelve fields are colour-coded by ring: ruby for the Person, sapphire for the Household, emerald for the World. Gold is kept for the centre. These are a memory aid and are not liturgical colours. The calendar uses the liturgical colours of the day, shown as small dots.
