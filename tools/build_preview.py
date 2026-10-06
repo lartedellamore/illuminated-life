@@ -32,6 +32,10 @@ for src in re.findall(r'<script\s+src="([^"]+)"\s*>\s*</script>', html):
     js = re.sub(r"[ \t]*/\* sw:start \*/.*?/\* sw:end \*/\n?", "", js, flags=re.S)
     scripts.append(js.replace("</script", "<\\/script"))
 
+# The preview host cannot load local font files, so use Google Fonts there.
+styles = [re.sub(r"@font-face \{[^}]*assets/fonts[^}]*\}\n?", "", c) for c in styles]
+fonts.append('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap">')
+
 out = "\n".join(
     [title, *fonts, "<style>", *styles, "</style>", '<div id="app"></div>',
      '<script>window.IL_HOST = "preview";</script>', "<script>", *scripts, "</script>", ""]
