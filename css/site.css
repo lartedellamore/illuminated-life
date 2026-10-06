@@ -218,3 +218,18 @@ footer p:last-child { margin-bottom: 0; color: #A9B6C4; }
   .btn, .nav nav a { transition: none; }
   .btn:active { transform: none; }
 }
+
+/* the three rings, colour-coded like the glass of a rose window; gold is kept for the centre */
+:root { --person: #9E3B4D; --household: #2F5D8C; --world: #2E7257; --person-n: #E79AA9; --household-n: #8DB9E6; --world-n: #86CDAA; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --person: #E79AA9; --household: #8DB9E6; --world: #86CDAA; } }
+:root[data-theme="dark"] { --person: #E79AA9; --household: #8DB9E6; --world: #86CDAA; }
+.ring-person { --rc: var(--person); } .ring-household { --rc: var(--household); } .ring-world { --rc: var(--world); }
+.ring[class*="ring-"] { border-top: 3px solid var(--rc); }
+.ring[class*="ring-"] .eyebrow, .ring[class*="ring-"] h3 { color: var(--rc); }
+.ring[class*="ring-"] li { padding-left: 16px; position: relative; }
+.ring[class*="ring-"] li::before { content: ""; position: absolute; left: 0; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; background: var(--rc); transform: rotate(45deg); }
+.hero-rose .hp-person .pf { fill: var(--person-n); } .hero-rose .hp-household .pf { fill: var(--household-n); } .hero-rose .hp-world .pf { fill: var(--world-n); }
+.hero-rose .hp-person .pl { stroke: var(--person-n); } .hero-rose .hp-household .pl { stroke: var(--household-n); } .hero-rose .hp-world .pl { stroke: var(--world-n); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 18px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--ink2); }
+.legend li { display: flex; align-items: center; gap: 8px; }
+.legend i { width: 9px; height: 9px; transform: rotate(45deg); display: inline-block; }

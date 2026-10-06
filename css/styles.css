@@ -1,6 +1,15 @@
+@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 400; font-display: swap; src: url("../assets/fonts/cormorant-garamond-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 500; font-display: swap; src: url("../assets/fonts/cormorant-garamond-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 600; font-display: swap; src: url("../assets/fonts/cormorant-garamond-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 400; font-display: swap; src: url("../assets/fonts/cormorant-garamond-latin-400-italic.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("../assets/fonts/inter-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("../assets/fonts/inter-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: swap; src: url("../assets/fonts/inter-latin-600-normal.woff2") format("woff2"); }
 /* Illuminated Life · design system
    Layout: one narrow reading column on vellum, a sticky name bar above, a tab bar below.
-   Gold is kept for what is lit. Soft blue is the unlit ground. */
+   Gold is kept for what is lit, and for the centre. Soft blue is the unlit ground.
+   Three glass colours mark the three rings: ruby for the Person, sapphire for the Household,
+   emerald for the World. They are a memory aid, never the only signal, and not liturgical colours. */
 
 :root {
   --paper: #FCFCFD;
@@ -22,6 +31,11 @@
   --focus: #6B4F12;
   --bar: rgba(252, 252, 253, 0.93);
   --shadow: 0 1px 2px rgba(31, 45, 61, 0.04);
+  --person: #9E3B4D; --person-soft: #F8ECEE; --person-line: #E3BEC5;
+  --household: #2F5D8C; --household-soft: #EAF1F8; --household-line: #BCD0E5;
+  --world: #2E7257; --world-soft: #E9F3EE; --world-line: #BBD9CA;
+  /* Liturgical colours of the day. They are not the ring colours: brighter, and always drawn as a small bead. */
+  --lit-white: #FFFFFF; --lit-red: #C9302C; --lit-green: #5E9C3A; --lit-violet: #6F4BA8; --lit-rose: #E78FB0; --lit-ring: #8A7A55;
   --serif: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -31,6 +45,10 @@
     --gold: #D4B36A; --gold-ink: #E2C583; --gold-soft: #2A2618; --gold-pale: #6E5C30;
     --ink: #EDF1F5; --ink2: #C4CFDA; --dim: #9AA9B8; --rose: #E0A0AC; --on-gold: #1A1408; --edge: #7C8B9C; --focus: #F0D9A0;
     --bar: rgba(16, 24, 34, 0.93); --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --person: #E79AA9; --person-soft: #33202A; --person-line: #6B3A47;
+    --household: #8DB9E6; --household-soft: #1B2A3B; --household-line: #35557A;
+    --world: #86CDAA; --world-soft: #182E26; --world-line: #34644F;
+    --lit-white: #F6F1E4; --lit-red: #EF6A5E; --lit-green: #9CCB6B; --lit-violet: #A98BE0; --lit-rose: #F4B2CB; --lit-ring: #B9A777;
     color-scheme: dark;
   }
 }
@@ -39,8 +57,17 @@
   --gold: #D4B36A; --gold-ink: #E2C583; --gold-soft: #2A2618; --gold-pale: #6E5C30;
   --ink: #EDF1F5; --ink2: #C4CFDA; --dim: #9AA9B8; --rose: #E0A0AC; --on-gold: #1A1408; --edge: #7C8B9C; --focus: #F0D9A0;
   --bar: rgba(16, 24, 34, 0.93); --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --person: #E79AA9; --person-soft: #33202A; --person-line: #6B3A47;
+  --household: #8DB9E6; --household-soft: #1B2A3B; --household-line: #35557A;
+  --world: #86CDAA; --world-soft: #182E26; --world-line: #34644F;
+  --lit-white: #F6F1E4; --lit-red: #EF6A5E; --lit-green: #9CCB6B; --lit-violet: #A98BE0; --lit-rose: #F4B2CB; --lit-ring: #B9A777;
   color-scheme: dark;
 }
+
+/* An element with one of these classes takes its ring's colour as --rc. */
+.rc-person { --rc: var(--person); --rc-soft: var(--person-soft); --rc-line: var(--person-line); }
+.rc-household { --rc: var(--household); --rc-soft: var(--household-soft); --rc-line: var(--household-line); }
+.rc-world { --rc: var(--world); --rc-soft: var(--world-soft); --rc-line: var(--world-line); }
 
 body {
   margin: 0; background: var(--paper); color: var(--ink);
@@ -64,7 +91,12 @@ main h1:focus { outline: none; }
   border-bottom: 1px solid var(--line);
 }
 .mark { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; font-family: var(--serif); font-style: italic; font-size: 25px; color: var(--gold-ink); letter-spacing: 0.01em; }
-.season-chip { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); text-align: right; }
+.season-chip { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex: 1 1 0; min-width: 0; min-height: 44px; background: none; border: none; padding: 0; text-align: right; color: var(--dim); }
+.sc-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 10.5px; line-height: 1.3; }
+.sc-text b { font-family: var(--serif); font-weight: 500; font-size: 15px; line-height: 1.12; color: var(--ink2); }
+.season-chip .lc { margin-right: 6px; transform: translateY(-1px); }
+.sc-text b, .sc-text span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.season-chip:hover .sc-text b { color: var(--gold-ink); }
 .body { max-width: 680px; margin: 0 auto; padding-block: 20px 110px; padding-inline: 18px; }
 .stack { display: flex; flex-direction: column; gap: 12px; }
 .stack > * { min-width: 0; }
@@ -116,12 +148,23 @@ p { margin: 0 0 10px; }
 
 .rosepane { display: flex; gap: 18px; align-items: center; padding: 16px; flex-wrap: wrap; }
 .rosepane > div { flex: 1 1 220px; min-width: 0; }
+.rosewrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+/* the legend: three glass colours and the gold centre */
+.legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px 22px; justify-content: center; font-size: 12.5px; line-height: 1.4; color: var(--dim); }
+.stack > .legend, .prose > .legend { justify-content: start; }
+@media (min-width: 560px) { .stack > .legend, .prose > .legend { grid-template-columns: repeat(2, auto); } }
+.legend li { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.legend b { font-weight: 500; color: var(--ink2); }
+.sw { display: inline-block; flex: 0 0 auto; width: 9px; height: 9px; border-radius: 2px; background: var(--rc); transform: rotate(45deg); }
+.sw.centre { background: var(--gold); border-radius: 50%; transform: none; }
+.h2 .sw, .h3 .sw { margin: 0 11px 0 2px; vertical-align: 0.12em; }
 .rose { flex: 0 0 auto; width: 190px; height: 190px; margin: 0 auto; display: block; }
 .rose .ring { fill: none; stroke: var(--line2); stroke-width: 1; }
-.rose .arc { fill: none; stroke: var(--gold-pale); stroke-width: 1.4; stroke-linecap: round; }
-.rose .petal-line { fill: var(--blue); stroke: var(--gold-pale); stroke-width: 0.8; }
-.rose .petal-fill { fill: var(--gold); transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
-.rose .num { font-family: var(--serif); font-size: 9.5px; fill: var(--dim); }
+.rose .arc { fill: none; stroke: var(--rc, var(--gold-pale)); stroke-width: 1.4; stroke-linecap: round; opacity: 0.75; }
+.rose .petal-line { fill: var(--rc-soft, var(--blue)); stroke: var(--rc, var(--gold-pale)); stroke-width: 0.8; }
+.rose .petal-fill { fill: var(--rc, var(--gold)); transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+.rose .num { font-family: var(--serif); font-size: 9.5px; fill: var(--rc, var(--dim)); }
 .rose .p[data-focus="1"] .num { fill: var(--gold-ink); font-weight: 600; font-size: 11px; }
 .rose .p[data-focus="1"] .petal-line { stroke: var(--gold-ink); stroke-width: 1.6; }
 .rose .p { cursor: pointer; }
@@ -139,6 +182,9 @@ p { margin: 0 0 10px; }
 .link-row:hover { background: var(--surface); }
 .badge { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 50%; background: var(--blue); color: var(--gold-ink); display: grid; place-items: center; transition: background 0.3s; }
 .badge.gold { background: var(--gold-soft); }
+.badge[class*="rc-"] { background: var(--rc-soft); color: var(--rc); }
+.rowtext .fname { display: inline; color: var(--rc); font-weight: 500; }
+.fnum, .rowtext .fnum { display: inline; color: var(--rc); font-family: var(--serif); font-weight: 600; font-size: 1.12em; letter-spacing: 0.02em; }
 .days { font-family: var(--serif); font-size: 17px; color: var(--gold-ink); white-space: nowrap; }
 .tag { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--blue); color: var(--ink2); font-weight: 500; white-space: nowrap; }
 
@@ -165,7 +211,7 @@ p { margin: 0 0 10px; }
 .tick { stroke: var(--gold-ink); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; opacity: 0; transition: opacity 0.3s; }
 .keep[aria-pressed="true"] .rp { stroke-dashoffset: 0; }
 .keep[aria-pressed="true"] .tick { opacity: 1; }
-.keep[aria-pressed="true"] .badge { background: var(--gold-soft); }
+.keep[aria-pressed="true"] .badge:not([class*="rc-"]) { background: var(--gold-soft); }
 .keep[aria-pressed="true"] .rowtext b { color: var(--dim); }
 
 /* ── buttons ── */
@@ -212,8 +258,13 @@ p { margin: 0 0 10px; }
 .lampwrap { position: relative; width: 42px; height: 42px; flex: 0 0 42px; }
 .lamp { position: absolute; inset: -1px; width: 44px; height: 44px; pointer-events: none; }
 .lt { fill: none; stroke: var(--line); stroke-width: 2; }
-.lp { fill: none; stroke: var(--gold); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 125.6; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 1s cubic-bezier(0.22, 1, 0.36, 1); }
-.field.open { border-color: var(--gold-pale); }
+.lp { fill: none; stroke: var(--rc, var(--gold)); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 125.6; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 1s cubic-bezier(0.22, 1, 0.36, 1); }
+.field { box-shadow: inset 3px 0 0 var(--rc, transparent), var(--shadow); }
+.field.open { border-color: var(--rc-line, var(--gold-pale)); }
+.field.open .field-head { box-shadow: inset 3px 0 0 var(--rc, transparent); background: var(--rc-soft, transparent); border-bottom: 1px solid var(--rc-line, var(--line)); margin-bottom: 12px; }
+.field.open .field-head .badge { background: var(--card); }
+.field.open .field-head .rowtext span:not(.fnum) { color: var(--ink2); } /* --dim is too faint on a tint */
+.ringcard { box-shadow: inset 3px 0 0 var(--rc), var(--shadow); }
 .field.focus { border-color: var(--gold); }
 .field-body { padding: 2px 16px 18px; }
 .chev { color: var(--dim); transition: transform 0.25s; flex: 0 0 auto; }
@@ -301,8 +352,78 @@ details.entry p { font-size: 14.5px; margin: 0 0 6px; color: var(--ink2); }
 @keyframes rise { from { opacity: 0.4; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 .book { display: none; }
+/* ── the Church's year: the calendar ── */
+.lc { display: inline-block; flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: var(--lit-green); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06); }
+.lc-white { background: var(--lit-white); box-shadow: inset 0 0 0 1.5px var(--lit-ring); }
+.lc-red { background: var(--lit-red); }
+.lc-green { background: var(--lit-green); }
+.lc-violet { background: var(--lit-violet); }
+.lc-rose { background: var(--lit-rose); }
+/* rank by weight */
+.rk-s { font-weight: 700; font-variant-caps: small-caps; letter-spacing: 0.03em; }
+.rk-f { font-weight: 700; }
+.rk-m, .rk-sun { font-weight: 400; }
+.rk-o { font-style: italic; }
+.litname { display: flex; align-items: baseline; gap: 10px; }
+.litname .lc { width: 11px; height: 11px; transform: translateY(-2px); }
+.litname .rk-s { font-weight: 600; }
+.dayfeast { flex: 1 1 100%; text-align: center; display: flex; align-items: baseline; justify-content: center; gap: 7px; font-family: var(--sans); font-size: 12.5px; font-weight: 400; color: var(--dim); margin-top: 2px; }
+.dayfeast .lc { width: 8px; height: 8px; }
+.seg.three button { padding-inline: 10px; font-size: 18px; }
+.calpane { padding: 12px 6px 10px; overflow: visible; }
+.calnav { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 8px 10px; }
+.calmonth { font-family: var(--serif); font-weight: 500; font-size: 23px; line-height: 1.2; margin: 0; text-align: center; flex: 1 1 auto; min-width: 0; }
+.cal { display: block; }
+.calrow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.calrow > span { display: block; min-width: 0; }
+.calhead span { text-align: center; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); padding: 2px 0 6px; }
+.calhead span:last-child { color: var(--gold-ink); }
+.calday { width: 100%; min-height: 50px; background: none; border: 1px solid transparent; border-radius: 12px; padding: 5px 0 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: var(--ink2); }
+.calday b { font-family: var(--serif); font-size: 19px; line-height: 1; font-weight: inherit; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-variant-numeric: lining-nums; }
+.calday.rk-s, .calday.rk-f { color: var(--ink); }
+.calday.rk-s { letter-spacing: 0; }
+.calday.rk-w { color: var(--dim); }
+.calrow > span:last-child .calday { color: var(--ink); }
+.calday:hover { background: var(--surface); }
+.calday.sel { background: var(--gold-soft); border-color: var(--gold-pale); }
+.calday.today b { box-shadow: 0 0 0 1.5px var(--gold); background: var(--gold-soft); color: var(--ink); }
+.calfoot { display: flex; align-items: center; gap: 10px; padding: 10px 8px 2px; }
+.calfoot .in { flex: 1 1 0; min-width: 0; }
+.legend-lit { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 12.5px; color: var(--dim); padding: 0 4px; }
+.legend-lit .lk { display: inline-flex; align-items: center; gap: 6px; }
+.legend-lit .lk b { font-weight: 500; color: var(--ink2); }
+.legend-lit .wide { flex: 1 1 100%; display: block; color: var(--ink2); }
+.dlist { padding: 4px 0; }
+.calpane .dlist { padding: 0; }
+.drow { width: 100%; min-height: 52px; display: grid; grid-template-columns: 44px 9px minmax(0, 1fr); gap: 12px; align-items: center; text-align: left; background: none; border: none; border-top: 1px solid var(--line); padding: 9px 14px; color: var(--ink); font-size: 15px; line-height: 1.3; }
+.drow:first-child { border-top: none; }
+.drow:hover { background: var(--surface); }
+.drow.today { background: var(--gold-soft); }
+.drow .dd { display: flex; flex-direction: column; align-items: center; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); line-height: 1.2; }
+.drow .dd b { font-family: var(--serif); font-size: 21px; font-weight: 500; color: var(--ink); letter-spacing: 0; line-height: 1; font-variant-numeric: lining-nums; }
+.drow .dn { min-width: 0; overflow-wrap: anywhere; }
+.drow .dopt { display: block; font-size: 13.5px; color: var(--dim); margin-top: 1px; }
+.sheet-back { position: fixed; inset: 0; z-index: 50; background: rgba(16, 24, 34, 0.42); animation: fade 0.2s ease both; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 51; max-width: 680px; margin: 0 auto; max-height: 86vh; overflow-y: auto; overscroll-behavior: contain; background: var(--card); border: 1px solid var(--gold-pale); border-bottom: none; border-radius: 20px 20px 0 0; padding: 10px 18px calc(22px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -8px 30px rgba(16, 24, 34, 0.18); animation: sheetup 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.sheet:focus { outline: none; }
+.sheet-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 46px; }
+.sheet-top .rub { margin: 0; }
+.sheet .h2 { margin-top: 4px; }
+.calnote { margin-top: 12px; }
+.sheet .btnrow { margin: 16px 0 14px; }
+.sheet-note { font-family: var(--serif); font-style: italic; font-size: 17px; line-height: 1.35; color: var(--ink2); margin: 8px 0 0; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; margin: 14px 0 4px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.facts div { min-width: 0; }
+.facts dt { font-size: 10.5px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--dim); }
+.facts dd { margin: 1px 0 0; font-family: var(--serif); font-size: 18px; line-height: 1.25; }
+.optlist { list-style: none; margin: 0 0 10px; padding: 0; }
+.optlist li { display: grid; grid-template-columns: 9px minmax(0, 1fr); column-gap: 10px; align-items: baseline; padding: 5px 0; font-size: 15.5px; }
+.optlist .note { grid-column: 2; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes sheetup { from { transform: translateY(24px); opacity: 0; } }
+
 @media print {
-  .top, .tabbar, .body, .toast, .update { display: none !important; }
+  .top, .tabbar, .body, .toast, .update, .sheet, .sheet-back { display: none !important; }
   body { background: #fff; color: #000; }
   .book { display: block; font-family: var(--serif); color: #000; font-size: 12pt; line-height: 1.5; }
   @page { margin: 18mm 16mm; }
@@ -316,8 +437,15 @@ details.entry p { font-size: 14.5px; margin: 0 0 6px; color: var(--ink2); }
   .ba { page-break-inside: avoid; margin-bottom: 9pt; }
   .bday { margin-bottom: 20pt; }
   .bday h2 { font-size: 16pt; margin-bottom: 6pt; }
+  .book .blit { font-size: 10.5pt; font-style: italic; margin: -3pt 0 8pt; }
   .book ol, .book ul { margin: 0 0 6pt; padding-left: 16pt; }
   .book li { margin-bottom: 2pt; }
+  /* The ring colours on paper: a thin rule and the numeral. Names and numerals carry the meaning in black and white. */
+  .book { --person: #9E3B4D; --household: #2F5D8C; --world: #2E7257; }
+  .bring { font-family: var(--sans); font-size: 8.5pt; letter-spacing: 0.16em; text-transform: uppercase; margin: 16pt 0 6pt !important; padding-bottom: 3pt; border-bottom: 1.2pt solid var(--rc); page-break-after: avoid; }
+  .bfield { border-left: 1.5pt solid var(--rc); padding-left: 9pt; }
+  .bfield h3 { margin-top: 0; }
+  .bnum { color: var(--rc); font-style: normal; font-weight: 600; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
@@ -325,6 +453,12 @@ details.entry p { font-size: 14.5px; margin: 0 0 6px; color: var(--ink2); }
 
 @media (max-width: 350px) {
   .body { padding-inline: 14px; }
+  .calpane { padding-inline: 2px; }
+  .calday b { font-size: 18px; }
+  .seg.three button { font-size: 16.5px; padding-inline: 8px; }
+  .seg.three button em { letter-spacing: 0.06em; }
+  .facts dd { font-size: 17px; }
+  .drow { padding-inline: 10px; gap: 9px; grid-template-columns: 40px 9px minmax(0, 1fr); }
   .top { padding-inline: 14px; }
   .mark { font-size: 22px; }
   .tabbar button { font-size: 10.5px; }
