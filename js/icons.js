@@ -126,7 +126,7 @@ window.IL = window.IL || {};
       ["understanding", "At Mass I follow what is being done at the altar, and it matters to me."],
       ["fortitude", "I finish hard things, and I can bear what cannot be changed without growing bitter."],
       ["counsel", "Faced with a hard choice, I can wait without forcing an answer until the next step is clear."],
-      ["knowledge", "I see my work, my money and my possessions as gifts that point beyond themselves."],
+      ["knowledge", "I see my work, my finances and my possessions as gifts that point beyond themselves."],
       ["fear", "In church, or before something great and holy, I grow quiet and small, and I am glad to."]
     ],
     states: { awake: "awake", steady: "burning low", dormant: "dormant" },

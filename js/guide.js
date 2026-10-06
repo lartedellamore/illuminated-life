@@ -140,7 +140,7 @@
 
   // Turns anything into a well-formed proposal. Types, lengths, field ids, times and kinds are checked; everything
   // else is dropped. The size is capped: three daily anchors, one new practice for the season's field, Sunday Mass,
-  // the day of rest, the weekly hour, one confession interval, one service, a money hour only when Money is the
+  // the day of rest, the weekly hour, one confession interval, one service, a finance hour only when Finance is the
   // field, one unoptimised hour only for the ordered house. env: { source, band, day }.
   function sanitise(raw, env) {
     const r = obj(raw), e = env || {}, strict = e.source === "claude", shape = Object.assign({}, DEFAULT_SHAPE, obj(e.day)), seen = {};

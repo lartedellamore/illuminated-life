@@ -10,7 +10,7 @@ IL.RINGS = [
     gloss: "Body, mind, soul and heart: the four with which we are asked to love God (Mark 12:30). They come first because the self is the first thing entrusted to you, and you cannot give what you have not received." },
   { id: "household", colour: "household", colourName: "sapphire", name: "The Household", says: "What I keep", hours: "V to VIII",
     sub: "the house", subRef: "the domestic church, Catechism 1655-1657",
-    gloss: "Time, money, work and home. The steward of the Gospel is the manager of a household. Here love takes structure, or stays a feeling." },
+    gloss: "Time, finance, work and home. The steward of the Gospel is the manager of a household. Here love takes structure, or stays a feeling." },
   { id: "world", colour: "world", colourName: "emerald", name: "The World", says: "What I give", hours: "IX to XII",
     sub: "the field", subRef: "Matthew 13:38",
     gloss: "Creation, speech, beauty and mission. The neighbour, widened to the earth itself. Here the light leaves your hands." }
@@ -124,13 +124,13 @@ IL.FIELDS = [
     verse: { t: "Teach us to number our days, that we may gain a heart of wisdom.", r: "Psalm 90:12" },
     ccc: "2184-2185, 2698" },
 
-  { id: "money", n: "VI", name: "Money", ring: "household", icon: "coin",
+  { id: "money", n: "VI", name: "Finance", ring: "household", icon: "coin",
     holds: "Earning, spending, saving, giving, debt.",
     end: "Goods held as a trustee: known to the cent, given first, enough for those who depend on you, and never your security.",
     disorder: "Vagueness, which is usually avoidance dressed as detachment. Or anxiety, which is trust placed in a balance.",
     examine: ["Do I know what came in last month, and what I gave?", "Is there a debt or a bill I am not looking at?", "What would I refuse to give up if God asked for it?"],
     rungs: ["One hour with the figures: what came in, and what went out", "Giving set aside first, by a proportion decided in advance", "A written plan for debt, and a modest reserve begun", "I know my numbers, give gladly, and am content with enough"],
-    radiant: "Money has become a tool of love and has stopped being a source of fear.",
+    radiant: "Your finances have become a tool of love and have stopped being a source of fear.",
     verse: { t: "Where your treasure is, there will your heart be also.", r: "Matthew 6:21" },
     ccc: "2402-2405, 2443-2449" },
 
