@@ -6,15 +6,50 @@ window.IL = window.IL || {};
 
 IL.RINGS = [
   { id: "person", colour: "person", colourName: "ruby", name: "The Person", says: "What I am", hours: "I to IV",
+    sub: "the temple", subRef: "1 Corinthians 6:19",
     gloss: "Body, mind, soul and heart: the four with which we are asked to love God (Mark 12:30). They come first because the self is the first thing entrusted to you, and you cannot give what you have not received." },
   { id: "household", colour: "household", colourName: "sapphire", name: "The Household", says: "What I keep", hours: "V to VIII",
+    sub: "the house", subRef: "the domestic church, Catechism 1655-1657",
     gloss: "Time, money, work and home. The steward of the Gospel is the manager of a household. Here love takes structure, or stays a feeling." },
   { id: "world", colour: "world", colourName: "emerald", name: "The World", says: "What I give", hours: "IX to XII",
+    sub: "the field", subRef: "Matthew 13:38",
     gloss: "Creation, speech, beauty and mission. The neighbour, widened to the earth itself. Here the light leaves your hands." }
 ];
 
 /* The centre of the rose is kept in gold. It belongs to no ring. */
-IL.CENTRE = { name: "The centre", says: "Not yours to light" };
+IL.CENTRE = { name: "The centre", says: "Not yours to light", sub: "Christ, the lamp", subRef: "Revelation 21:23" };
+
+/* The picture of the model: a parish church. Lamp, temple, house, field. */
+IL.PICTURE = {
+  title: "Lamp, temple, house, field",
+  text: "Think of a parish church. At its heart a lamp burns before the tabernacle. Christ is there, and that is the centre. Around him stands the temple, which is you. Around the temple is the house: the home, the domestic church. Beyond the doors lies the field: the field is the world, and every Mass ends by sending us into it. Lamp, temple, house, field.",
+  alt: "A line drawing of a small church. A lamp burns before the tabernacle at its heart. Around the lamp is an arch, the temple. Around the arch are the walls and roof, the house. Outside the door lie the furrows of the field."
+};
+
+/* Christ at the centre: the figures of Scripture that the model leans on. Each: title, text, reference, and an optional caution. */
+IL.CHRIST = {
+  intro: "God's own plan is to unite all things in Christ (Ephesians 1:10). In him all things hold together (Colossians 1:17). All things are yours, and you are Christ's, and Christ is God's (1 Corinthians 3:21-23).",
+  cards: [
+    { title: "The new Adam", text: "The first man was set in a garden to till it and keep it, and did not keep it. Christ was obedient in a garden, and on Easter morning was taken for the gardener.", ref: "Genesis 2:15; Romans 5:14; John 20:15" },
+    { title: "The true Temple", text: "He spoke of the temple of his body. In the city to come the Lamb is the temple and the lamp, and we are built into him as living stones.", ref: "John 2:21; Revelation 21:22-23; 1 Peter 2:5" },
+    { title: "Joseph", text: "Sold by his brothers, raised up, set over another's house, he fed the nations with bread.", ref: "Genesis 39-41" },
+    { title: "The Son over the house", text: "Moses was faithful in God's house as a servant. Christ is faithful over it as a Son, and we are that house.", ref: "Hebrews 3:5-6" },
+    { title: "The keeper of the key", text: "Eliakim the steward received the key of the house of David. The risen Christ holds it.", ref: "Isaiah 22:20-22; Revelation 3:7" },
+    { title: "The twelve stones", caution: "An application, not a figure Scripture itself draws", text: "The high priest carried twelve stones on his heart before the Lord. They are the twelve tribes, fulfilled in the Church. Take courage from them: you do not carry your twelve fields alone.", ref: "Exodus 28:21, 29" }
+  ]
+};
+
+/* Three threads that run through all twelve fields. They are also the three parts of the steward card on the Rule screen. */
+IL.THREADS = [
+  { id: "temple", name: "The temple", says: "what you are",
+    text: "Before you hold anything, you are held. By Baptism you are a temple of the Holy Spirit and a member of Christ (CCC 1265)." },
+  { id: "calling", name: "The calling", says: "the shape your life is given",
+    text: "Each one should lead the life the Lord has assigned (1 Corinthians 7:17). Your state of life decides what faithfulness means in every field. It is discerned in prayer, over time, with the Church, never by an app." },
+  { id: "gifts", name: "The gifts", says: "what you bring",
+    text: "As each has received a gift, use it to serve one another (1 Peter 4:10). Charisms are given through you for others (CCC 799-801). A gift kept for oneself is a buried talent." }
+];
+IL.THREADS_LINE = "And first of all we are stewards of the mysteries of God (1 Corinthians 4:1). The faith itself is the first treasure. It lives in the field of the Soul and is given away in Mission.";
+IL.STATES_OF_LIFE = [["", "Not set"], ["single", "Single"], ["married", "Married"], ["widowed", "Widowed"], ["consecrated", "Consecrated"], ["ordained", "Ordained"], ["discerning", "Discerning"]];
 
 /* The three ring colours are a memory aid, like the glass of a rose window.
    They are not the Church's liturgical colours. The values live in css/styles.css. */
@@ -60,7 +95,7 @@ IL.FIELDS = [
     ccc: "158, 2500" },
 
   { id: "soul", n: "III", name: "Soul", ring: "person", icon: "flame",
-    holds: "Prayer, the sacraments, confession, silence, spiritual direction.",
+    holds: "The faith itself, received and handed on: prayer, Scripture, sacraments, confession, silence, spiritual direction.",
     end: "Friendship with God as the breath of the day: fixed, unhurried, and kept most of all when it is dry.",
     disorder: "Bursts of intensity, then collapse. Prayer only when the mood arrives.",
     examine: ["Did I keep the time on the days it gave me nothing?", "When did I last confess: a date kept, or a crisis?", "Do I let him speak, or do I fill the whole silence?"],
@@ -70,7 +105,7 @@ IL.FIELDS = [
     ccc: "1324, 2697-2699" },
 
   { id: "heart", n: "IV", name: "Heart", ring: "person", icon: "heart",
-    holds: "Marriage or vocation, family, friendship, community, emotional honesty.",
+    holds: "Marriage and family, friendship, community, emotional honesty.",
     end: "To know and be known: present to the people given to you, honest about what you feel, and faithful over years.",
     disorder: "Widely liked, and known by no one. Present in the room, absent in attention.",
     examine: ["Who knows the whole truth about me?", "Whom do I owe a visit, a call, an apology?", "Do the people at my table get my attention, or my leftovers?"],

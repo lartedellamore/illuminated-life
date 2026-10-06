@@ -2,16 +2,46 @@
    Plain JavaScript, no build step, no dependencies.
    State lives in one object, saved to this browser only (localStorage).
    Screens are functions that return HTML strings; one click handler reads data-act.
-   Every value that comes from the user or from a backup passes through esc() on its way into HTML. */
+   Every value that comes from the user or from a backup passes through esc() on its way into HTML.
+
+   ── For other scripts (the Guide): window.IL.api ──
+   A small, stable doorway into the app. Every call goes the same way as a tap on the screen:
+   the value is checked, the state is normalised and saved on this device, and the screen is drawn again.
+     IL.api.getState()            a copy of everything saved (changing the copy changes nothing)
+     IL.api.addPractice({ title, field, cadence, time, weekday, note, companion })
+                                  adds one practice to the Rule and returns its id, or null if it has no title.
+                                  cadence: "day", "week", "month" or "year". field: a field id such as "soul".
+                                  time: "07:30". weekday: 0 (Sunday) to 6, or a name such as "friday"; weekly only.
+                                  companion: the id of a companion app, such as "laudate".
+     IL.api.setFloor([a, b, c])   the three floor lines
+     IL.api.setSeasonField(id)    this season's field; the ninety days begin today. Returns false for an unknown id.
+     IL.api.setSteward(patch)     any of { baptism: "YYYY-MM-DD", patron, stateOfLife, call, gifts: [a, b, c] }
+     IL.api.iconoSummary()        the latest Icon Screen synthesis, or null if it has not been taken
+     IL.api.makeICS(opts)         the whole Rule as calendar text (RFC 5545). opts: { feasts: true } adds the principal feasts.
+     IL.api.makeDayICS(iso)       one day's plan as calendar text: single events, nothing repeating
+     IL.api.go(route)             "today", "fields", "rule", "diary", "diary/examen", "more", "more/model", "more/icon" ...
+     IL.api.removePractice(id)    takes one practice out of the Rule. Returns true if it was there.
+     IL.api.setChurch(patch)      any of { parish, confession, ahead, beside, behind }
+     IL.api.setMovements(id, m)   the four lines of one field: any of { receive, bless, spend, return }
+     IL.api.setDay(patch)         the shape of a day: any of { wake, workStart, workEnd, bed: "HH:MM", workVaries, restDay: 0 to 6 }
+     IL.api.setName(name)         what the Guide calls the person
+     IL.api.addCommitment({ title, start, end, date | weekday })   a fixed commitment on one date, or every week. Returns its id.
+     IL.api.removeCommitment(id)
+     IL.api.finishGuide(ids)      marks the Guide as used today, clears its draft, and notes which practices it added
+     IL.api.batch(fn)             runs several calls and draws the screen once at the end
+   The pure scoring of the Icon Screen is on IL.icono, and its words on IL.ICONO (js/icons.js).
+   The Guide, My day and the calendar screen are in js/guide.js, which is loaded before this file. */
 
 (function () {
   "use strict";
-  const { RINGS, LEVELS, MOVES, FIELDS, LAWS, PRECEPTS, PRAYERS, VERSES, EXAMEN, BUCKETS, DEFAULT_RULE, COMPANIONS, ANCHOR_HINTS } = IL;
+  const { RINGS, LEVELS, MOVES, FIELDS, LAWS, PRECEPTS, PRAYERS, VERSES, EXAMEN, BUCKETS, DEFAULT_RULE, COMPANIONS, ANCHOR_HINTS, ICONO } = IL;
+  const icono = IL.icono;
   const L = IL.liturgy;
   const KEY = "illuminated-life-v1";
   const LOCALE = "en-GB"; // one fixed locale, so dates read the same on every device
   const PREVIEW = window.IL_HOST === "preview"; // set only in the hosted preview, where files and printing are blocked
   const root = document.getElementById("app");
+  const GUIDE = IL.guide || null; // js/guide.js: the Guide, My day, the calendar screen
 
   /* ───────── helpers ───────── */
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"'`]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));
@@ -26,6 +56,7 @@
   const longDate = (iso) => fmt(fromISO(iso), { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const verseFor = (d) => VERSES[L.dayOfYear(d) % VERSES.length];
   const cssq = (s) => String(s).replace(/["\\]/g, "\\$&");
+  const isTime = (s) => typeof s === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
 
   function weekKey(d) {
     const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -85,19 +116,29 @@
   const EXAMEN_KEYS = ["thanks", "alive", "tight", "wound", "limit", "tomorrow"]; // the line "for mercy" is never stored
   const FIELD_KEYS = ["receive", "bless", "spend", "ret", "act"];
   const UNSAFE = ["__proto__", "constructor", "prototype"];
+  const STATES = IL.STATES_OF_LIFE.map((x) => x[0]);
+  // The Icon Screen, one step at a time: each panel (p) and then what it shows (r).
+  const ICO_STEPS = ["p1", "r1", "p2", "r2", "p3", "r3", "p4", "r4", "p5", "r5"];
 
   function blank() {
     const fields = {};
     FIELDS.forEach((f) => { fields[f.id] = { level: 0, receive: "", bless: "", spend: "", ret: "", act: "" }; });
     return {
       v: 1, fields, focus: null,
-      rule: DEFAULT_RULE.map(([cadence, text, time, note, field]) => ({ id: uid(), cadence, text, time, note, field, done: null, companion: "", link: "" })),
+      rule: DEFAULT_RULE.map(([cadence, text, time, note, field]) => ({ id: uid(), cadence, text, time, note, field, done: null, companion: "", link: "", weekday: "" })),
       floor: ["Two minutes of prayer, morning and night", "Sunday Mass", "One honest conversation a week"],
       floorMode: false, floorDay: { date: "", done: [false, false, false] },
       church: { parish: "", confession: "monthly", ahead: "", beside: "", behind: "", shownTo: "", shownOn: "" },
+      steward: { baptism: "", patron: "", stateOfLife: "", call: "", gifts: ["", "", ""] },
+      // The Icon Screen: dated results, and the answers of a sitting in progress. Shadow answers are never here.
+      icono: { results: [], draft: null },
       diary: {}, journal: {},
       treasury: { currency: "€", income: "", buckets: BUCKETS.map(([name, note, pct]) => ({ name, note, pct })) },
-      prefs: { pdfVerse: true, region: "general", sundayFeasts: false }, meta: { lastBackup: "" }
+      // The shape of an ordinary day, the person's own fixed commitments, and the first thing for a given date.
+      day: { wake: "07:00", workStart: "09:00", workEnd: "17:30", bed: "22:30", workVaries: false, restDay: 0, fixed: [], first: {} },
+      // The Guide: the date it was last finished, and the answers of an interview in progress.
+      guide: { done: "", draft: null, made: [] }, // made: the practices the Guide itself put in the Rule
+      prefs: { pdfVerse: true, region: "general", sundayFeasts: false, name: "", todayView: "list", icsFeasts: false }, meta: { lastBackup: "", calStart: "" }
     };
   }
 
@@ -133,7 +174,8 @@
           id, cadence, text, time: typeof r.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(r.time) ? r.time : "",
           note: str(r.note, 300), field: fieldById(r.field) ? r.field : "",
           done: typeof r.done === "string" && /^[0-9W-]{4,10}$/.test(r.done) ? r.done : null,
-          companion, link: companion === "custom" ? link : ""
+          companion, link: companion === "custom" ? link : "",
+          weekday: cadence === "weekly" && Number.isInteger(r.weekday) && r.weekday >= 0 && r.weekday <= 6 ? r.weekday : ""
         };
       }).filter(Boolean);
     }
@@ -146,6 +188,26 @@
     const ch = obj(src.church);
     Object.keys(base.church).forEach((k) => { base.church[k] = str(ch[k], 300); });
     if (!CONFESSION.includes(base.church.confession)) base.church.confession = "monthly";
+
+    const st = obj(src.steward), sg = Array.isArray(st.gifts) ? st.gifts : [];
+    base.steward = { baptism: isISO(st.baptism) && st.baptism <= todayISO() ? st.baptism : "", patron: str(st.patron, 120),
+      stateOfLife: STATES.includes(st.stateOfLife) ? st.stateOfLife : "", call: str(st.call, 300), gifts: [0, 1, 2].map((i) => str(sg[i], 120)) };
+
+    // Icon Screen results are checked one by one; a damaged one is dropped. One result for each date, the newest twelve.
+    const ic = obj(src.icono), byDate = {};
+    (Array.isArray(ic.results) ? ic.results : []).slice(-60).forEach((x) => { const r = icono.clean(x); if (r && isISO(r.date)) byDate[r.date] = r; });
+    base.icono.results = Object.keys(byDate).sort().slice(-12).map((k) => byDate[k]);
+    if (ic.draft && typeof ic.draft === "object" && !Array.isArray(ic.draft)) {
+      const d = ic.draft, pick = (list, n, ok) => Array.from({ length: n }, (_, i) => (Array.isArray(list) && ok(list[i]) ? list[i] : null));
+      base.icono.draft = {
+        step: ICO_STEPS.includes(d.step) ? d.step : "p1",
+        d: pick(d.d, ICONO.dwelling.questions.length, (v) => Number.isInteger(v) && v >= 0 && v <= 4),
+        l: pick(d.l, ICONO.lamps.statements.length, (v) => Number.isInteger(v) && v >= 0 && v <= 3),
+        s: (Array.isArray(d.s) ? d.s : []).filter((id, i, arr) => icono.SCENE_IDS.includes(id) && arr.indexOf(id) === i).slice(0, ICONO.icon.pick),
+        t: pick(d.t, ICONO.threshold.questions.length, (v) => icono.REGISTER_IDS.includes(v)),
+        vice: icono.VICE_IDS.includes(d.vice) ? d.vice : "" // present only when the person asked to keep it
+      };
+    }
 
     const di = obj(src.diary);
     Object.keys(di).filter(isISO).slice(-1500).forEach((k) => {
@@ -167,9 +229,33 @@
     base.treasury.income = str(tr.income, 20);
     base.treasury.buckets.forEach((b, i) => { const x = obj(tb[i]); if (typeof x.pct === "number" || typeof x.pct === "string") b.pct = str(x.pct, 8); });
 
+    const dy = obj(src.day), hhmm = (v, d) => (isTime(v) ? v : d), seenF = {}, old = L.iso(L.shift(new Date(), -7));
+    base.day.wake = hhmm(dy.wake, "07:00"); base.day.bed = hhmm(dy.bed, "22:30");
+    base.day.workStart = hhmm(dy.workStart, "09:00"); base.day.workEnd = hhmm(dy.workEnd, "17:30");
+    base.day.workVaries = dy.workVaries === true;
+    base.day.restDay = Number.isInteger(dy.restDay) && dy.restDay >= 0 && dy.restDay <= 6 ? dy.restDay : 0;
+    // A commitment belongs to one date or to one weekday. One-off commitments older than a week are let go.
+    base.day.fixed = (Array.isArray(dy.fixed) ? dy.fixed : []).slice(0, 200).map((x) => {
+      const c = obj(x), title = str(c.title, 120).trim(); if (!title || !isTime(c.start)) return null;
+      const weekly = Number.isInteger(c.weekday) && c.weekday >= 0 && c.weekday <= 6, date = !weekly && isISO(c.date) ? c.date : "";
+      if (!weekly && (!date || date < old)) return null;
+      let id = typeof c.id === "string" && /^[a-z0-9]{1,16}$/i.test(c.id) ? c.id : uid(); while (seenF[id]) id = uid(); seenF[id] = true;
+      const end = isTime(c.end) && c.end > c.start ? c.end : c.start < "23:00" ? String(Number(c.start.slice(0, 2)) + 1).padStart(2, "0") + c.start.slice(2) : "23:59";
+      return { id, title, start: c.start, end, date, weekday: weekly ? c.weekday : "" };
+    }).filter(Boolean).slice(0, 60);
+    const fi = obj(dy.first), yesterday = L.iso(L.shift(new Date(), -1));
+    Object.keys(fi).filter((k) => isISO(k) && k >= yesterday).sort().slice(0, 4).forEach((k) => { const v = str(fi[k], 200); if (v) base.day.first[k] = v; });
+
+    const gd = obj(src.guide);
+    base.guide.done = isISO(gd.done) && gd.done <= todayISO() ? gd.done : "";
+    base.guide.draft = GUIDE && gd.draft ? GUIDE.cleanDraft(gd.draft) : null;
+    base.guide.made = (Array.isArray(gd.made) ? gd.made : []).filter((id, i, arr) => typeof id === "string" && arr.indexOf(id) === i && base.rule.some((r) => r.id === id)).slice(0, 40);
+
     const pf = obj(src.prefs); base.prefs.pdfVerse = pf.pdfVerse !== false;
     base.prefs.region = pf.region === "nl" ? "nl" : "general"; base.prefs.sundayFeasts = pf.sundayFeasts === true;
+    base.prefs.name = str(pf.name, 60).trim(); base.prefs.todayView = pf.todayView === "day" ? "day" : "list"; base.prefs.icsFeasts = pf.icsFeasts === true;
     const me = obj(src.meta); base.meta.lastBackup = typeof me.lastBackup === "string" && !isNaN(Date.parse(me.lastBackup)) ? new Date(Date.parse(me.lastBackup)).toISOString() : "";
+    base.meta.calStart = isISO(me.calStart) && me.calStart <= todayISO() ? me.calStart : "";
     return base;
   }
 
@@ -201,8 +287,11 @@
   const ui = {
     tab: "today", sub: null, open: null, gild: null, toast: null, showPrayer: false, day: null, diaryView: "diary",
     printKind: "rule", printRange: "month", today: todayISO(), mem: {}, later: {}, confirmFocus: null, editRule: null, updated: false,
-    cal: null, calView: "month", calDay: null, calFocus: null, calWeek: null
+    cal: null, calView: "month", calDay: null, calFocus: null, calWeek: null,
+    // The Icon Screen. The Shadow answers live here, in memory, and nowhere else.
+    ico: { view: null, shadow: { a: [], vice: "", keep: false }, sitting: "", del: false }
   };
+  const icoReset = () => { ui.ico = { view: null, shadow: { a: [], vice: "", keep: false }, sitting: "", del: false }; };
 
   function setPath(path, value) {
     if (path.startsWith("rule:")) {
@@ -244,16 +333,20 @@
     cross: "M12 3.5v17M6 9.2h12",
     chev: "m9.5 6 6 6-6 6",
     trash: "M4.8 6.6h14.4M9.6 6.6V4.8h4.8v1.8M6.6 6.6l.9 12.6h9l.9-12.6",
-    shield: "M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6Z"
+    shield: "M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6Z",
+    guide: "M5.2 5.5h13.6a1.7 1.7 0 0 1 1.7 1.7v7.6a1.7 1.7 0 0 1-1.7 1.7h-7.3L7.6 20v-3.5H5.2a1.7 1.7 0 0 1-1.7-1.7V7.2a1.7 1.7 0 0 1 1.7-1.7ZM8 9.6h8M8 12.6h5",
+    send: "M4.5 12h13M12.5 6.5 18 12l-5.5 5.5"
   };
   const icon = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="${n === "more" ? 2.6 : 1.5}" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n] || ICONS.spark}"/></svg>`;
   // Ring colours: every field takes the colour of its ring. Gold stays with the centre.
   const rc = (fieldId) => { const R = IL.ringOf(fieldId); return R ? "rc-" + R.colour : ""; };
   const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+  const upper = (s) => esc(s.charAt(0).toUpperCase() + s.slice(1));
   // A field's badge (third argument) takes its ring colour; other badges stay blue or gold.
   const badge = (n, gold, fieldId) => `<span class="badge ${fieldId && rc(fieldId) ? rc(fieldId) : gold ? "gold" : ""}">${icon(n)}</span>`;
   const fname = (f) => `<span class="fname ${rc(f.id)}">${esc(f.name)}</span>`;
-  const ringLegend = () => `<ul class="legend" aria-label="What the colours mean">${RINGS.map((R) => `<li><i class="sw rc-${R.colour}" aria-hidden="true"></i><span><b>${R.name}</b> · ${lower(R.says)}</span></li>`).join("")}<li><i class="sw centre" aria-hidden="true"></i><span><b>${IL.CENTRE.name}</b> · ${lower(IL.CENTRE.says)}</span></li></ul>`;
+  const ringLegend = () => `<ul class="legend" aria-label="What the colours mean">${RINGS.map((R) => `<li><i class="sw rc-${R.colour}" aria-hidden="true"></i><span><b>${R.name}</b> · ${esc(R.sub)}</span></li>`).join("")}<li><i class="sw centre" aria-hidden="true"></i><span><b>${IL.CENTRE.name}</b> · ${esc(IL.CENTRE.sub)}</span></li></ul>`;
+  const ringSub = (R) => `<span class="ringsub"> · ${esc(R.sub)}</span>`;
 
   /* ───────── the rose window: twelve petals, numbered like the hours ─────────
      One image for assistive technology. The same fields are an ordinary list on the Fields screen. */
@@ -282,11 +375,33 @@
   }
 
   /* ───────── shared pieces ───────── */
+  const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const weekdayName = (r) => (r && r.cadence === "weekly" && Number.isInteger(r.weekday) ? WEEKDAYS[r.weekday] + "s" : "");
+  const crisisNote = () => `<div class="pane quiet pad"><p>This app is not medical or pastoral care. If you are thinking of harming yourself, contact your doctor or a crisis line now.</p><p>In the Netherlands: 113 Suicide Prevention, call <a class="out inl" href="tel:113">113</a> or <a class="out inl" href="tel:08000113">0800-0113</a>, or <a class="out inl" href="https://www.113.nl/" target="_blank" rel="noopener noreferrer">113.nl</a>.</p><p style="margin:0">Elsewhere, call your local emergency number.</p></div>`;
+  const prettyISO = (isoDate) => fmt(fromISO(isoDate), { day: "numeric", month: "long", year: "numeric" });
+
+  // One way into the Rule for every practice, whoever asks: the Rule screen, a field, the Icon Screen, or IL.api.
+  const CAD_ALIAS = { day: "daily", week: "weekly", month: "monthly", year: "yearly" };
+  function addPractice(p) {
+    const o = p && typeof p === "object" ? p : {};
+    const text = String(o.title != null ? o.title : o.text != null ? o.text : "").trim().slice(0, 300); if (!text) return null;
+    const cadence = CAD_ALIAS[o.cadence] || (CADENCES.includes(o.cadence) ? o.cadence : "daily");
+    let link = o.companion === "custom" ? safeURL(o.link) : "";
+    const companion = o.companion === "custom" ? (link ? "custom" : "") : compById(o.companion) ? o.companion : "";
+    if (companion !== "custom") link = "";
+    let wd = typeof o.weekday === "string" && o.weekday.trim() ? WEEKDAYS.findIndex((n) => n.toLowerCase() === o.weekday.trim().toLowerCase()) : typeof o.weekday === "number" ? o.weekday : -1;
+    if (!(cadence === "weekly" && Number.isInteger(wd) && wd >= 0 && wd <= 6)) wd = "";
+    const r = { id: uid(), cadence, text, time: typeof o.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(o.time) ? o.time : "",
+      note: typeof o.note === "string" ? o.note.slice(0, 300) : "", field: fieldById(o.field) ? o.field : "", done: null, companion, link, weekday: wd };
+    state.rule.push(r); save(); return r;
+  }
+  // Replace part of the state the long way round: merge, normalise, save, draw again.
+  function commit(patch) { state = normalise(Object.assign({}, state, patch)); save(); render(); }
   function keepRow(r, doneNow, act, extra) {
     const f = r.field ? fieldById(r.field) : null, c = companionOf(r);
     const btn = (cls) => `<button class="${cls} row keep" data-act="${act}" ${extra} aria-pressed="${doneNow ? "true" : "false"}">
       ${badge(f ? f.icon : "flame", false, f && f.id)}
-      <span class="rowtext"><b>${esc(r.text)}</b><span>${[f ? fname(f) : "", esc(r.time), r.note && !(f && r.note === f.name) ? esc(r.note) : ""].filter(Boolean).join(" · ")}</span></span>
+      <span class="rowtext"><b>${esc(r.text)}</b><span>${[f ? fname(f) : "", weekdayName(r), esc(r.time), r.note && !(f && r.note === f.name) ? esc(r.note) : ""].filter(Boolean).join(" · ")}</span></span>
       <span class="ringc" aria-hidden="true"><svg viewBox="0 0 36 36"><circle class="rt" cx="18" cy="18" r="15"/><circle class="rp" cx="18" cy="18" r="15"/></svg>
       <svg class="tick" viewBox="0 0 24 24"><path d="m7 12.5 3.4 3.4L17 9"/></svg></span></button>`;
     if (!c) return btn("pane");
@@ -324,6 +439,12 @@
     if (!bits.length) return "";
     return `<p class="note hint">${{ morning: "This morning", midday: "At midday", evening: "This evening" }[key]}, if it helps: ${bits.join(", or ")}. <button class="link sm" data-act="sub" data-s="companions">About companions</button></p>`;
   }
+  // How many years since Baptism, if today is the anniversary. 29 February is kept on the 28th in other years.
+  function baptismYears(now) {
+    const b = state.steward.baptism; if (!isISO(b)) return 0;
+    const [y, m, d0] = b.split("-").map(Number), leap = new Date(now.getFullYear(), 1, 29).getMonth() === 1, d = m === 2 && d0 === 29 && !leap ? 28 : d0;
+    return now.getMonth() + 1 === m && now.getDate() === d && now.getFullYear() > y ? now.getFullYear() - y : 0;
+  }
   function Today() {
     const now = new Date(), d = todayISO(), S = L.SEASONS[L.seasonOn(now)];
     const v = verseFor(now);
@@ -331,8 +452,13 @@
     const F = state.focus ? fieldById(state.focus.field) : null;
     let h = `<section class="stack">
       <div class="pane quiet verse"><h1 class="rub center"><span class="vh">Today, </span>${esc(fmt(now, { weekday: "long", day: "numeric", month: "long" }))}</h1>
-        <p class="vtext">“${esc(v.t)}”</p><p class="vref">${esc(v.r)}</p></div>
-      <div class="pane quiet rosepane">${rose()}
+        <p class="vtext">“${esc(v.t)}”</p><p class="vref">${esc(v.r)}</p></div>`;
+    // Two ways to see today: the list of what to keep, or the day hour by hour. Floor mode shows only the floor.
+    if (G && !state.floorMode) {
+      h += `<div class="seg" id="today-seg" role="group" aria-label="How to see today">${[["list", "List", "what to keep"], ["day", "Day", "hour by hour"]].map(([k, t, e]) => `<button data-act="todayview" data-v="${k}" aria-pressed="${state.prefs.todayView === k}">${t}<em>${e}</em></button>`).join("")}</div>`;
+      if (state.prefs.todayView === "day") return h + G.day() + `</section>`;
+    }
+    h += `<div class="pane quiet rosepane">${rose()}
         <div><span class="rub">Twelve fields, one steward</span>
           <h2 class="h2">${F ? "This season: " + esc(F.name) : "Everything you hold, on one page"}</h2>
           <p class="sub">Each petal is a field, numbered like the hours. A petal brightens as its practices are kept. It records practice. It does not measure grace or the state of your soul.</p>
@@ -357,8 +483,16 @@
         ${day >= 90 && !ui.later.season ? `<div class="pane lit pad"><span class="rub">The season is complete</span><p>Ninety days with one field. Give thanks, look again at the twelve, and ask which field is next.</p><div class="btnrow"><button class="gold-btn" data-act="sub" data-s="review">Review the season</button><button class="pill" data-act="later" data-k="season">Later</button></div></div>` : ""}`;
     }
 
+    const years = baptismYears(now);
+    if (years) h += `<div class="pane lit pad" id="baptism-day"><span class="rub">The anniversary of your Baptism</span><h2 class="h2">${years === 1 ? "One year" : years + " years"} a temple of the Holy Spirit</h2>
+      <p class="sub">On this day you were made a member of Christ. Give thanks, renew your promises, and light a candle if you can.${state.steward.patron ? " " + esc(state.steward.patron) + ", pray for us." : ""}</p></div>`;
+
+    if (G && !state.floorMode) h += G.todayCard();
     const jt = jGet(d), nThanks = Object.values(jt.g || {}).filter(Boolean).length;
     h += `<button class="pane row link-row" data-act="opendiary">${badge("pen", nThanks > 0)}<span class="rowtext"><b>Today's diary</b><span>${nThanks ? "Begun. Seven thanks, three prayers, one act of service." : "Seven thanks, three prayers, one act of service."}</span></span>${icon("chev", 18)}</button>`;
+    // A quiet invitation, until the Icon Screen has been taken once. Hidden in floor mode.
+    if (!state.icono.results.length && !state.floorMode) { const dr = state.icono.draft, P = dr ? ICONO.panels[icoPanelOf(dr.step)] : null;
+      h += `<button class="pane row link-row" id="today-icon" data-act="sub" data-s="icon">${badge("spark", false)}<span class="rowtext"><b>${dr ? "Go on with the Icon Screen" : "The Icon Screen"}</b><span>${dr ? "Your place is kept: Panel " + P.n + " of V, " + esc(P.name) + "." : "A mirror in five panels. About twenty minutes, once a year."}</span></span>${icon("chev", 18)}</button>`; }
     h += `<div class="pane pad switchrow"><div><b id="floor-lab">Floor mode</b><p class="note">For hard weeks. Today shows only your three floor lines. Nothing is counted against you.</p></div>
       <label class="switch"><input type="checkbox" id="floor-mode" data-toggle="floorMode" ${state.floorMode ? "checked" : ""} aria-labelledby="floor-lab"><span></span></label></div>`;
 
@@ -429,17 +563,37 @@
       <p class="lede">Everything you have been given, in three rings. God ordinarily asks about one field at a time.</p>
       ${ringLegend()}
       <p><button class="link" data-act="sub" data-s="model">How the model works</button></p>
-      ${RINGS.map((R) => `<div class="ringhead rc-${R.colour}"><span class="rub">${R.says} · ${R.hours}</span><h2 class="h2"><i class="sw" aria-hidden="true"></i>${R.name}</h2><p class="sub">${esc(R.gloss)}</p></div>
+      ${RINGS.map((R) => `<div class="ringhead rc-${R.colour}"><span class="rub">${R.says} · ${R.hours}</span><h2 class="h2"><i class="sw" aria-hidden="true"></i>${R.name}${ringSub(R)}</h2><p class="sub">${esc(R.gloss)}</p></div>
         ${FIELDS.filter((f) => f.ring === R.id).map(fieldCard).join("")}`).join("")}</section>`;
   }
 
   /* ───────── Rule ───────── */
+  // The steward: three threads through all twelve fields. What you are, the shape your life is given, what you bring.
+  function stewardCard() {
+    const S = state.steward, T = IL.THREADS, latest = icoLatest(), sum = latest ? icono.lampSummary(latest.lamps) : null;
+    const head = (t) => `<h3 class="h3">${esc(t.name)}<span class="ringsub"> · ${esc(t.says)}</span></h3><p class="sub">${esc(t.text)}</p>`;
+    const chips = latest ? latest.charisms.map((id) => ICONO.charisms.find((c) => c.id === id).name).concat(sum.awake.map((id) => ICONO.gifts.find((g) => g.id === id).name)) : [];
+    return `<h2 class="h2 mt" id="steward">The steward</h2>
+      <div class="pane pad steward"><p class="sub">Three threads run through all twelve fields. Write here what is true of you. All of it is optional.</p>
+        <div class="thread">${head(T[0])}
+          <div class="frow mt"><label class="fieldset"><span class="lab">The date of my Baptism</span><input class="in" type="date" id="st-baptism" data-bind="steward.baptism" value="${esc(isISO(S.baptism) ? S.baptism : "")}" max="${esc(todayISO())}"></label>
+            ${input("steward.patron", S.patron, "e.g. St Willibrord", "My patron saint")}</div>
+          <p class="note below">If you give the date, Today marks the anniversary each year, and your calendar file includes it.</p></div>
+        <div class="thread">${head(T[1])}
+          <div class="mt"><label class="fieldset"><span class="lab">My state of life</span><select class="in" id="st-state" data-bind="steward.stateOfLife">${IL.STATES_OF_LIFE.map(([v, l]) => `<option value="${esc(v)}" ${S.stateOfLife === v ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+            ${input("steward.call", S.call, "A sentence is enough", "My particular call, in my own words")}</div></div>
+        <div class="thread">${head(T[2])}
+          <div class="mt">${[0, 1, 2].map((i) => input(`steward.gifts.${i}`, S.gifts[i], i === 0 ? "A gift, in my own words" : "", `Gift ${i + 1}`)).join("")}</div>
+          ${chips.length ? `<p class="lab">From the Icon Screen, ${esc(prettyISO(latest.date))}</p><p class="chips">${chips.map((c) => `<span class="tag">${esc(c)}</span>`).join("")}</p><p class="note">Provisional. Ask the people you have served.</p>` : `<p class="note">The Icon Screen can suggest where to look.</p>`}
+          <button class="link" data-act="sub" data-s="icon">Open the Icon Screen</button></div>
+        <p class="steward-line">${esc(IL.THREADS_LINE)}</p></div>`;
+  }
   function Rule() {
     const group = (c, title) => {
       const rows = state.rule.filter((r) => r.cadence === c);
       return `<h2 class="h2 mt">${title}</h2>${rows.length ? `<div class="pane">${rows.map((r) => {
         const f = r.field ? fieldById(r.field) : null, comp = companionOf(r), edit = ui.editRule === r.id, id = esc(r.id);
-        return `<div class="rulerow"><div class="row">${badge(f ? f.icon : "flame", false, f && f.id)}<span class="rowtext"><b>${esc(r.text)}</b><span>${[f ? fname(f) : "", esc(r.time), r.note && !(f && r.note === f.name) ? esc(r.note) : ""].filter(Boolean).join(" · ")}</span>${comp ? `<span class="withc">With ${esc(comp.name)}</span>` : ""}</span>
+        return `<div class="rulerow"><div class="row">${badge(f ? f.icon : "flame", false, f && f.id)}<span class="rowtext"><b>${esc(r.text)}</b><span>${[f ? fname(f) : "", weekdayName(r), esc(r.time), r.note && !(f && r.note === f.name) ? esc(r.note) : ""].filter(Boolean).join(" · ")}</span>${comp ? `<span class="withc">With ${esc(comp.name)}</span>` : ""}</span>
           <button class="icobtn" data-act="editrule" data-id="${id}" aria-expanded="${edit}" aria-label="Companion for ${esc(r.text)}">${icon("pen", 18)}</button><button class="icobtn" data-act="delrule" data-id="${id}" aria-label="Remove ${esc(r.text)}">${icon("trash", 18)}</button></div>
           ${edit ? `<div class="ruleedit"><label class="fieldset"><span class="lab">Companion app</span><select class="in" id="rc-${id}" data-bind="rule:${id}:companion" data-rerender="1">${companionOptions(r.companion)}</select></label>
             ${r.companion === "custom" ? `<label class="fieldset"><span class="lab">Link</span><input class="in" id="rl-${id}" type="url" inputmode="url" autocomplete="off" data-link="${id}" value="${esc(r.link)}" placeholder="https://"></label>` : ""}
@@ -449,6 +603,7 @@
     const c = state.church;
     return `<section class="stack"><h1 class="h1">Rule of Life</h1>
       <p class="lede">A trellis, not a cage. Small enough to keep in your worst week.</p>
+      ${G ? `<button class="pane row link-row" id="rule-guide" data-act="sub" data-s="guide">${badge("guide", false)}<span class="rowtext"><b>${state.guide.done ? "Revisit the Guide" : "Build my Rule with the Guide"}</b><span>Plain questions, one at a time. It drafts, you decide.</span></span>${icon("chev", 18)}</button>` : ""}
       <div class="pane lit pad"><span class="rub">The floor</span><p class="sub">Three lines you will keep when everything else falls away. Decide them now, in a good hour.</p>
         <div class="mt">${[0, 1, 2].map((i) => input(`floor.${i}`, state.floor[i], "A line of your floor", `Line ${i + 1}`)).join("")}</div></div>
       ${group("daily", "Each day")}${group("weekly", "Each week")}${group("monthly", "Each month")}${group("yearly", "Each year")}
@@ -460,6 +615,7 @@
           <input class="in" id="new-link" type="url" inputmode="url" autocomplete="off" placeholder="https://" aria-label="Link" hidden>
           <button class="gold-btn fix" data-act="addrule">Add</button></div>
         <p class="note">Give it a time and a place. One new practice at a time. A companion is optional: another app that gives you the prayer itself.</p></div>
+      ${stewardCard()}
       <h2 class="h2 mt">In the Body</h2>
       <div class="pane pad"><p class="sub">No one is saved alone. Name the places and people that hold you.</p><div class="mt">
         ${input("church.parish", c.parish, "e.g. St Nicholas, Amsterdam", "My parish")}
@@ -471,7 +627,8 @@
         <div class="frow">${input("church.shownTo", c.shownTo, "A rule written alone is a rumour", "I have shown this Rule to")}${input("church.shownOn", c.shownOn, "date", "On")}</div></div></div>
       <h2 class="h2 mt">The Church's own minimum</h2>
       <div class="pane pad"><p class="sub">The five precepts are the floor beneath every floor (Catechism 2041-2043).</p><ol class="plain mt">${PRECEPTS.map((p) => `<li>${esc(p)}</li>`).join("")}</ol></div>
-      ${PREVIEW ? `<p class="note">In the full app you can add your Rule to your calendar and print it.</p>` : `<div class="btnrow mt"><button class="gold-btn" data-act="ics">Add my Rule to my calendar</button><button class="pill gold" data-act="print">Print my Rule</button></div><p class="note">The calendar file opens in Apple Calendar, Google Calendar or Outlook. There is only one life, so use your one calendar.</p>`}
+      ${canSave() || !PREVIEW ? `<div class="btnrow mt">${canSave() ? `<button class="gold-btn" data-act="ics">Add my Rule to my calendar</button>` : ""}${PREVIEW ? "" : `<button class="pill gold" data-act="print">Print my Rule</button>`}</div>
+        <p class="note">The calendar file opens in Apple Calendar, Google Calendar or Outlook. There is only one life, so use your one calendar.</p>${G ? `<p style="margin:0"><button class="link" data-act="sub" data-s="calendar">How it works, and what is in the file</button></p>` : ""}` : `<p class="note">In the full app you can add your Rule to your calendar and print it.</p>`}
       <p class="creed">I decided in a clear hour. Today I only keep the appointment.</p>
     </section>`;
   }
@@ -567,33 +724,73 @@
 
   /* ───────── More ───────── */
   const MORE = [
-    ["model", "The Steward's Model", "One Master, twelve fields, four movements, six laws", "spark"],
+    ...(GUIDE ? [["guide", "The Guide", "Plain questions that build a first Rule and a plan for the day", "guide"]] : []),
+    ["model", "The Steward's Model", "Lamp, temple, house, field. Twelve fields, four movements, six laws", "spark"],
+    ["icon", "The Icon Screen", "A mirror in five panels: where you are, what you were given, what it is for", "lamp"],
     ["review", "Season review", "Walk the twelve fields and choose one", "grid"],
     ["year", "The Church's year", "The whole calendar, day by day", "calendar"],
+    ...(GUIDE ? [["calendar", "Into my calendar", "Hand your Rule to Apple, Google or Outlook as a file", "send"]] : []),
     ["treasury", "The Treasury", "First fruits, and an order for the rest", "coin"],
     ["prayers", "Prayers of the steward", "Morning, night, and the hard days", "flame"],
     ["companions", "Companions", "Other Catholic apps that give you the prayers themselves", "star"],
     ["backup", "Keep my words safe", "Back up, restore, or erase what is on this device", "shield"],
     ["about", "About this app", "What it is, and what it must never become", "book"]
   ];
-  const SUBS = { model: Model, review: Review, year: Year, treasury: Treasury, prayers: Prayers, companions: Companions, backup: Backup, about: About };
+  const SUBS = { model: Model, icon: Icono, review: Review, year: Year, treasury: Treasury, prayers: Prayers, companions: Companions, backup: Backup, about: About };
+  if (GUIDE) { SUBS.guide = () => G.guide(); SUBS.calendar = () => G.calendar(); }
   function More() {
     if (!ui.sub || !SUBS[ui.sub]) return `<section class="stack"><h1 class="h1">More</h1><p class="lede">The model beneath the app, and the tools around it.</p>
       ${MORE.map(([id, t, s, ic]) => `<button class="pane row link-row" data-act="sub" data-s="${id}">${badge(ic, id === "model")}<span class="rowtext"><b>${t}</b><span>${s}</span></span>${icon("chev", 18)}</button>`).join("")}</section>`;
     return `<section class="stack">${back()}${SUBS[ui.sub]()}</section>`;
   }
 
+  // The picture of the model: a small church. The lamp at its heart, the arch of the temple, the walls of the house, the furrows of the field.
+  function churchPicture() {
+    const sprout = (x, y) => `<path class="w" d="M${x} ${y}v-9M${x} ${y - 5}c-3.2-.6-4.6-2.6-4.6-5.2M${x} ${y - 5}c3.2-.6 4.6-2.6 4.6-5.2"/>`;
+    return `<svg class="church" viewBox="0 0 320 236" role="img" aria-label="${esc(IL.PICTURE.alt)}">
+      <path class="hf" d="M104 190V100l56-54 56 54v90Z"/>
+      <path class="pf" d="M128 190v-62c0-22 16-34 32-46 16 12 32 24 32 46v62Z"/>
+      <circle class="halo" cx="160" cy="112" r="24"/>
+      <path class="w" d="M10 190h94M216 190h94"/>
+      <path class="w" d="M150 191c-8 14-34 28-92 37M170 191c8 14 34 28 92 37M157 191c-2 12-8 26-18 39M163 191c2 12 8 26 18 39"/>
+      <path class="w thin" d="M18 204c28-5 56-6 84-3M302 204c-28-5-56-6-84-3M10 219c22-5 44-7 64-7M310 219c-22-5-44-7-64-7"/>
+      ${sprout(36, 190)}${sprout(62, 190)}${sprout(228, 190)}${sprout(246, 190)}
+      <path class="h" d="M93 110.5 160 46l67 64.5M104 100v90M216 100v90M104 190h24M192 190h24"/>
+      <path class="g" d="M160 46V25M153 32h14"/>
+      <path class="p" d="M128 190v-62c0-22 16-34 32-46 16 12 32 24 32 46v62"/>
+      <path class="g thin" d="M160 82v13M160 95l-7 20M160 95l7 20"/>
+      <path class="g" d="M152 115h16c0 6-3.2 9.5-8 9.5s-8-3.5-8-9.5Z"/>
+      <path class="flame" d="M160 113.5c3-3.2 2.6-6.8 0-10-2.6 3.2-3 6.8 0 10Z"/>
+      <path class="g" d="M151 170v-17a9 9 0 0 1 18 0v17M160 154v10M156 158h8M141 170h38M146 170v20M174 170v20"/>
+      <g class="lbl"><text class="tl-g" x="14" y="112">the lamp</text><path class="g thin" d="M66 108h68"/>
+        <text class="tl-p" x="306" y="150" text-anchor="end">the temple</text><path class="p thin" d="M194 146h50"/>
+        <text class="tl-h" x="14" y="66">the house</text><path class="h thin" d="M72 62h54l8 8"/>
+        <text class="tl-w" x="306" y="183" text-anchor="end">the field</text></g>
+    </svg>`;
+  }
   function Model() {
+    const P = IL.PICTURE, C = IL.CHRIST;
     return `<h1 class="h1">The Steward's Model</h1>
-      <p class="lede">One Master entrusts one steward with twelve fields in three rings. In every field the same four movements take place.</p>
-      <div class="pane quiet rosepane">${rose()}<div><span class="rub">Read it like a clock</span><p class="sub">Hours I to IV are the Person: what I am. V to VIII are the Household: what I keep. IX to XII are the World: what I give. The centre is not yours to light. It is the Master, who is light.</p></div></div>
+      <p class="lede">One Lord at the centre. One steward. Twelve fields in three rings. In every field the same four movements.</p>
+      <div class="pane quiet pad picture"><span class="rub center">The picture of the model</span><h2 class="h2 center">${esc(P.title)}</h2>
+        ${churchPicture()}
+        <p class="pictext">${esc(P.text)}</p>
+        ${ringLegend()}
+        <p class="note center">The Lamb is its lamp (${esc(IL.CENTRE.subRef)}). ${RINGS.map((R) => upper(R.sub) + ": " + esc(R.subRef)).join(". ")}.</p></div>
+      <div class="pane quiet rosepane">${rose()}<div><span class="rub">Read it like a clock</span><p class="sub">The same model, drawn as a rose window. Hours I to IV are the Person: what I am. V to VIII are the Household: what I keep. IX to XII are the World: what I give. The centre is not yours to light. It is Christ, who is the light.</p></div></div>
       <h2 class="h2 mt">The centre</h2><div class="prose"><p>At the centre is not a goal or a best self. It is a Person. The servant who buried his talent said: I knew you to be a hard man, and I was afraid (Matthew 25:24-25). His failure began with a false picture of the master. Fear buries. Trust invests.</p></div>
-      <h2 class="h2 mt">Three rings</h2>${RINGS.map((R) => `<div class="pane pad ringcard rc-${R.colour}"><span class="rub">${R.says} · ${R.hours}</span><h3 class="h3"><i class="sw" aria-hidden="true"></i>${R.name}</h3><p class="sub">${esc(R.gloss)}</p></div>`).join("")}
+      <h2 class="h2 mt">Christ at the centre</h2><p class="lede sm">${esc(C.intro)}</p>
+      <div class="ccards">${C.cards.map((c) => `<div class="pane pad ccard"><h3 class="h3">${esc(c.title)}</h3>${c.caution ? `<p class="caution">${esc(c.caution)}</p>` : ""}<p>${esc(c.text)}</p><p class="vref">${esc(c.ref)}</p></div>`).join("")}</div>
+      <h2 class="h2 mt">Three rings</h2>${RINGS.map((R) => `<div class="pane pad ringcard rc-${R.colour}"><span class="rub">${R.says} · ${R.hours}</span><h3 class="h3"><i class="sw" aria-hidden="true"></i>${R.name}${ringSub(R)}</h3><p class="sub">${esc(R.gloss)}</p></div>`).join("")}
       <p class="note">The rings are an order of flow and not a ranking of worth. Inner serves outer.</p>
+      <h2 class="h2 mt">Three threads through all twelve</h2>
+      ${IL.THREADS.map((t) => `<div class="pane pad"><span class="rub">${esc(t.says)}</span><h3 class="h3">${esc(t.name)}</h3><p class="sub">${esc(t.text)}</p></div>`).join("")}
+      <p class="steward-line">${esc(IL.THREADS_LINE)}</p>
+      <p><button class="link" data-act="gosteward">Write yours on the steward card</button></p>
       <h2 class="h2 mt">Four movements</h2><div class="prose"><p>They echo what the Lord did with bread: he took, blessed, broke and gave (Matthew 26:26). By baptism you share in Christ's priesthood, and your work, prayer, family life and rest become an offering joined to his (Catechism 901; Romans 12:1).</p></div>
       <div class="moves">${MOVES.map((m) => `<div class="move"><div class="mh"><b>${m.name}</b><em>${m.verb}</em></div><p>${esc(m.ask)}</p><p class="note">${esc(m.prayer)}</p></div>`).join("")}</div>
       <h2 class="h2 mt">Six laws</h2><div class="pane pad"><ol class="laws">${LAWS.map(([a, b]) => `<li><b>${esc(a)}</b>${esc(b)}</li>`).join("")}</ol></div>
-      <h2 class="h2 mt">What the lamps do not show</h2><div class="pane lit pad prose"><p>A lit petal records a practice kept. It does not measure grace, and no one can read the state of their soul from a chart (Catechism 2005). Grave sin breaks communion with God, and what restores it is not a habit but the sacrament of Reconciliation.</p><p>The rings, the movements and the rose are this app's way of arranging what the Church teaches. They are aids to memory, not doctrines.</p></div>`;
+      <h2 class="h2 mt">What the lamps do not show</h2><div class="pane lit pad prose"><p>A lit petal records a practice kept. It does not measure grace, and no one can read the state of their soul from a chart (Catechism 2005). Grave sin breaks communion with God, and what restores it is not a habit but the sacrament of Reconciliation.</p><p>The church, the rings, the movements and the rose are this app's way of arranging what the Church teaches. They are aids to memory, not doctrines.</p></div>`;
   }
 
   function Review() {
@@ -743,7 +940,7 @@
     const lb = state.meta.lastBackup ? new Date(state.meta.lastBackup) : null;
     return `<h1 class="h1">Keep my words safe</h1><p class="lede">Everything you write lives only in this browser, on this device. Nothing is sent anywhere.</p>
       <div class="pane pad"><h2 class="rub">Back up</h2><p class="sub">Clearing your browser data erases the app's memory. Keep a copy.</p>
-        <div class="btnrow mt">${PREVIEW ? "" : `<button class="gold-btn" data-act="download">Save a backup file</button>`}<button class="pill gold" data-act="copybackup">Copy my backup as text</button></div>
+        <div class="btnrow mt">${canSave() ? `<button class="gold-btn" data-act="download">Save a backup file</button>` : ""}<button class="pill gold" data-act="copybackup">Copy my backup as text</button></div>
         <p class="note mt" id="last-backup">${lb ? "Last backup: " + esc(fmt(lb, { day: "numeric", month: "long", year: "numeric" })) : "Never backed up"}</p>
         <textarea class="in mt" id="backup-out" rows="3" readonly hidden aria-label="Backup text"></textarea></div>
       <div class="pane pad"><h2 class="rub">Restore</h2><p class="sub">Paste a backup here, or choose a backup file. This replaces what is on this device.</p>
@@ -758,9 +955,10 @@
       <p class="lede">Self-knowledge in the presence of God, turned into times and places for love.</p>
       <p>Illuminated Life is the companion to the book <i>Illuminated: The Image of God, Embodied</i>. Every screen is a chapter of that book in working form. Read the theology first. Without it, this is only a task list with a candle on it.</p>
       <h2 class="h2 mt">What it promises</h2><ul class="plain"><li>It lights, and never scores. Dignity is not a metric.</li><li>It asks about one field. It adds nothing new in the other eleven. Their ordinary duties still hold.</li><li>It lets you begin again without penalty.</li><li>It sends you out of itself: to your parish, your confessor, your friends and the poor.</li><li>It keeps your words on your own device.</li></ul>
+      <h2 class="h2 mt">The Guide</h2><p>The Guide on this site follows fixed questions and is not an AI. Inside Claude, the same app can also draft with Claude if you allow it.</p><p>This app cannot see or change your Apple or Google calendar. It can hand your Rule to your calendar as a file.</p>
       <h2 class="h2 mt">What it must never become</h2><p>It is not a spiritual director, a confessor or a diagnosis. It cannot absolve, and it cannot discern a vocation. If you carry trauma, depression, addiction or disordered eating, please work with a qualified professional, and let this accompany that work.</p>
       <p>If the app ever feels like a judge and not a trellis, switch on floor mode, or close it for a season. The anchors are enough.</p>
-      <h2 class="h2 mt">If you are in crisis</h2><div class="pane quiet pad"><p>This app is not medical or pastoral care. If you are thinking of harming yourself, contact your doctor or a crisis line now.</p><p>In the Netherlands: 113 Suicide Prevention, call <a class="out inl" href="tel:113">113</a> or <a class="out inl" href="tel:08000113">0800-0113</a>, or <a class="out inl" href="https://www.113.nl/" target="_blank" rel="noopener noreferrer">113.nl</a>.</p><p style="margin:0">Elsewhere, call your local emergency number.</p></div>
+      <h2 class="h2 mt">If you are in crisis</h2>${crisisNote()}
       <h2 class="h2 mt">The three colours</h2><p>${esc(IL.COLOUR_NOTE)}</p>${ringLegend()}
       <h2 class="h2 mt">On authority</h2><p>This app is a private work. It is not an official text of the Church, and it carries no imprimatur. Use it alongside a parish, a confessor and the sacraments, never in place of them.</p><p>It is meant to agree in every point with Sacred Scripture and the Magisterium, and it is submitted to the Church's judgement. Catechism numbers are given so that each claim can be checked.</p>
       <h2 class="h2 mt">Other apps</h2><p>The apps named under Companions are independent works. We are not affiliated with them, and their names belong to their owners.</p></div>
@@ -770,6 +968,8 @@
   /* ───────── the printed pages ───────── */
   function Book() {
     if (ui.printKind === "diary") return DiaryBook();
+    if (ui.printKind === "icon") return IconBook();
+    if (ui.printKind === "day" && G) return G.dayBook();
     const F = state.focus ? fieldById(state.focus.field) : null, c = state.church;
     const by = (cad) => state.rule.filter((r) => r.cadence === cad).map((r) => `<p>${esc([r.time, r.text].filter(Boolean).join("  "))}</p>`).join("");
     return `<div class="bp bcover"><p>A RULE OF LIFE</p><h1>Illuminated Life</h1><p><i>Receive, bless, spend, return.</i></p><p>${esc(fmt(new Date(), { day: "numeric", month: "long", year: "numeric" }))}</p></div>
@@ -777,7 +977,7 @@
         <h2 style="margin-top:18pt">My rule of life</h2><h3>Each day</h3>${by("daily")}<h3>Each week</h3>${by("weekly")}<h3>Each month</h3>${by("monthly")}<h3>Each year</h3>${by("yearly")}
         <h3>In the Body</h3><p>Parish: ${esc(c.parish)}</p><p>Confession: ${esc(c.confession)}</p><p>Ahead of me: ${esc(c.ahead)}   Beside me: ${esc(c.beside)}   Behind me: ${esc(c.behind)}</p><p>Shown to: ${esc(c.shownTo)} ${esc(c.shownOn)}</p></div>
       <div class="bp"><h2>The twelve fields</h2>${F ? `<p><i>This season's field: ${esc(F.name)}</i></p>` : ""}
-        ${RINGS.map((R) => `<p class="bring rc-${R.colour}">${R.name} · ${lower(R.says)} · ${R.hours}</p>
+        ${RINGS.map((R) => `<p class="bring rc-${R.colour}">${R.name} · ${esc(R.sub)} · ${lower(R.says)} · ${R.hours}</p>
           ${FIELDS.filter((f) => f.ring === R.id).map((f) => { const r = state.fields[f.id]; return `<div class="ba bfield rc-${R.colour}"><h3><span class="bnum">${f.n}.</span> ${esc(f.name)} · ${LEVELS[r.level]}</h3>${MOVES.filter((m) => r[m.id]).map((m) => `<p><b>${m.name}.</b> ${esc(r[m.id])}</p>`).join("")}${r.act ? `<p><b>Next act.</b> ${esc(r.act)}</p>` : ""}</div>`; }).join("")}`).join("")}</div>`;
   }
 
@@ -794,7 +994,9 @@
     try { if (typeof el.selectionStart === "number") { k.s = el.selectionStart; k.e = el.selectionEnd; } } catch (e) { /* this control has no caret */ }
     return k.sel ? k : null;
   }
+  let batching = 0, drawLater = false;
   function render(opts) {
+    if (batching) { drawLater = true; return; } // IL.api.batch draws once, at the end
     const o = opts || {}, keep = focusKey(document.activeElement), y = window.scrollY;
     useCalendar();
     const today = litDay(todayISO()), tl = L.line(today);
@@ -848,19 +1050,57 @@
   }
   function go(tab, sub, opts) {
     checkDay();
-    ui.tab = SCREENS[tab] ? tab : "today"; ui.sub = sub || null; ui.confirmFocus = null; ui.editRule = null; ui.calDay = null;
+    ui.tab = SCREENS[tab] ? tab : "today"; ui.sub = sub || null; ui.confirmFocus = null; ui.editRule = null; ui.calDay = null; ui.ico.view = null; ui.ico.del = false;
     if (ui.tab === "diary") { ui.day = null; ui.diaryView = "diary"; } // the Diary tab always opens on today's page
+    if (G) G.onGo(ui.tab, ui.sub);
     render({ nav: true }); window.scrollTo(0, 0); pushRoute();
     // If the control that was pressed is gone, put focus on the new screen's heading.
     const h1 = root.querySelector("main h1");
     if (h1 && !root.contains(document.activeElement)) { h1.tabIndex = -1; try { h1.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } }
   }
 
-  /* ───────── files ───────── */
+  /* ───────── files ─────────
+     On the site a file is saved by the browser. In the hosted preview the page cannot save files itself:
+     there it asks the host (the "downloads" capability) and the person confirms each save. If the host
+     offers nothing, the save buttons are not drawn at all. */
+  const caps = { downloads: null, sample: null };
+  if (PREVIEW && window.claude && typeof window.claude.use === "function") {
+    ["downloads", "sample"].forEach((name) => {
+      try { Promise.resolve(window.claude.use(name)).then((c) => { if (c) { caps[name] = c; render(); } }, () => {}); } catch (e) { /* not offered here */ }
+    });
+  }
+  const canSave = () => !PREVIEW || !!caps.downloads;
   function download(name, text, mime) {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([text], { type: mime })); a.download = name;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  // One file inside a plain zip, stored and not compressed. The preview host does not accept calendar files, but it accepts a zip.
+  function zipOne(name, text) {
+    const enc = new TextEncoder(), data = enc.encode(text), fn = enc.encode(name), now = new Date();
+    let crc = -1; for (let i = 0; i < data.length; i++) { crc ^= data[i]; for (let k = 0; k < 8; k++) crc = (crc >>> 1) ^ (0xEDB88320 & -(crc & 1)); } crc = ~crc >>> 0;
+    const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1), date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+    const out = new Uint8Array(30 + fn.length + data.length + 46 + fn.length + 22), v = new DataView(out.buffer); let p = 0;
+    const u16 = (n) => { v.setUint16(p, n, true); p += 2; }, u32 = (n) => { v.setUint32(p, n >>> 0, true); p += 4; }, put = (b) => { out.set(b, p); p += b.length; };
+    u32(0x04034b50); u16(20); u16(0x0800); u16(0); u16(time); u16(date); u32(crc); u32(data.length); u32(data.length); u16(fn.length); u16(0); put(fn); put(data);
+    const central = p;
+    u32(0x02014b50); u16(20); u16(20); u16(0x0800); u16(0); u16(time); u16(date); u32(crc); u32(data.length); u32(data.length); u16(fn.length); u16(0); u16(0); u16(0); u16(0); u32(0); u32(0); put(fn);
+    const size = p - central;
+    u32(0x06054b50); u16(0); u16(0); u16(1); u16(1); u32(size); u32(central); u16(0);
+    return out;
+  }
+  // Saves one file. Resolves true when it was saved, false when it was not. It never throws.
+  function saveFile(name, text, mime) {
+    if (!PREVIEW) { try { download(name, text, mime); return Promise.resolve(true); } catch (e) { flash("Not saved"); return Promise.resolve(false); } }
+    if (!caps.downloads) return Promise.resolve(false);
+    const ics = /\.ics$/i.test(name);
+    let job;
+    try { job = Promise.resolve(caps.downloads.save(ics ? { filename: name.replace(/\.ics$/i, ".zip"), data: zipOne(name, text) } : { filename: name, data: text })); } catch (e) { job = Promise.reject(e); }
+    return job.then(() => true, (e) => {
+      const code = e && e.code;
+      if (["unavailable", "not_granted", "capability_disabled", "capability_removed"].includes(code)) { caps.downloads = null; render(); } // saving is not possible in this view
+      flash("Not saved"); return false;
+    });
   }
   // RFC 5545: CRLF line ends, lines folded at 75 octets, text escaped.
   function icsFold(line) {
@@ -870,35 +1110,102 @@
     out.push(cur); return out.join("\r\n");
   }
   const icsText = (s) => String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
-  function makeICS() {
-    const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z", now = new Date();
-    const WD = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"], WDN = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-    const ymd = (d) => L.iso(d).replace(/-/g, "");
-    const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Illuminated Life//Rule of Life//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:" + icsText("Rule of life")];
+  const ICS_WD = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"], WDN = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const ymd = (d) => L.iso(d).replace(/-/g, "");
+  const icsStamp = () => new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+  const normTitle = (s) => String(s == null ? "" : s).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  // The weekday a weekly practice falls on: the one chosen, or one named in its words ("Sunday Mass"), or the day of rest. Null if none.
+  function ruleWeekday(r) {
+    if (!r || r.cadence !== "weekly") return null;
+    if (Number.isInteger(r.weekday)) return r.weekday;
+    const named = WDN.findIndex((n) => r.text.toLowerCase().includes(n)); if (named >= 0) return named;
+    return /\bday of rest\b/i.test(r.text) ? state.day.restDay : null;
+  }
+  // One event, as lines. o: { uid, date, time, minutes, rrule, summary, description, url, alarm }. Without a time it is a whole day.
+  function icsEvent(o, stamp) {
+    const out = ["BEGIN:VEVENT", "UID:" + o.uid + "@illuminated-life", "DTSTAMP:" + stamp];
+    if (isTime(o.time)) out.push("DTSTART:" + ymd(o.date) + "T" + o.time.replace(":", "") + "00", "DURATION:PT" + (o.minutes >= 60 && o.minutes % 60 === 0 ? o.minutes / 60 + "H" : (o.minutes || 15) + "M"));
+    else out.push("DTSTART;VALUE=DATE:" + ymd(o.date));
+    if (o.rrule) out.push("RRULE:" + o.rrule);
+    out.push("SUMMARY:" + icsText(o.summary));
+    if (o.description) out.push("DESCRIPTION:" + icsText(o.description));
+    if (o.url) out.push("URL:" + String(o.url).replace(/[\r\n]/g, ""));
+    out.push("TRANSP:TRANSPARENT");
+    if (isTime(o.time) && Number.isInteger(o.alarm)) out.push("BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsText(o.summary), "TRIGGER:-PT" + o.alarm + "M", "END:VALARM");
+    out.push("END:VEVENT"); return out;
+  }
+  const icsWrap = (name, events) => ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Illuminated Life//Rule of Life//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:" + icsText(name)].concat(events, ["END:VCALENDAR"]).map(icsFold).join("\r\n") + "\r\n";
+  // When, and how often, a practice lands in the calendar. Dates that nobody chose are taken from the day the Rule
+  // was first handed over (meta.calStart), so that a second export says the same thing as the first.
+  function ruleSchedule(r) {
+    const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const anchor = isISO(state.meta.calStart) ? fromISO(state.meta.calStart) : today;
+    if (r.cadence === "weekly") {
+      const chosen = ruleWeekday(r), wd = chosen == null ? anchor.getDay() : chosen;
+      return { date: L.shift(today, (wd - today.getDay() + 7) % 7), rrule: "FREQ=WEEKLY;BYDAY=" + ICS_WD[wd] };
+    }
+    if (r.cadence === "monthly") {
+      if (/^confession\b/.test(normTitle(r.text))) return confessionSchedule();
+      const dom = Math.min(anchor.getDate(), 28); // a day every month has
+      let date = new Date(today.getFullYear(), today.getMonth(), dom); if (date < today) date = new Date(today.getFullYear(), today.getMonth() + 1, dom);
+      return { date, rrule: "FREQ=MONTHLY;BYMONTHDAY=" + dom };
+    }
+    if (r.cadence === "yearly") {
+      const m = anchor.getMonth(), dom = m === 1 && anchor.getDate() === 29 ? 28 : anchor.getDate();
+      let date = new Date(today.getFullYear(), m, dom); if (date < today) date = new Date(today.getFullYear() + 1, m, dom);
+      return { date, rrule: "FREQ=YEARLY;BYMONTH=" + (m + 1) + ";BYMONTHDAY=" + dom };
+    }
+    return { date: today, rrule: "FREQ=DAILY" };
+  }
+  // Confession, at the interval set under "In the Body": a whole-day reminder on a Saturday, to be moved to the parish's own time.
+  function confessionSchedule() {
+    const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const anchor = isISO(state.meta.calStart) ? fromISO(state.meta.calStart) : today, every = state.church.confession;
+    const sat = (d) => L.shift(d, (6 - d.getDay() + 7) % 7);
+    if (every === "every two weeks") {
+      let date = sat(anchor); while (date < today) date = L.shift(date, 14);
+      return { date, rrule: "FREQ=WEEKLY;INTERVAL=2;BYDAY=SA" };
+    }
+    const step = every === "each season" ? 3 : every === "every two months" ? 2 : 1;
+    let k = 0, date = sat(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
+    while (date < today && k < 600) { k += step; date = sat(new Date(anchor.getFullYear(), anchor.getMonth() + k, 1)); }
+    return { date, rrule: "FREQ=MONTHLY;" + (step > 1 ? "INTERVAL=" + step + ";" : "") + "BYDAY=1SA" };
+  }
+  // What the calendar file holds, as plain objects. The screen "Into my calendar" lists them; makeICS writes them.
+  function calendarEvents(opts) {
+    const o = opts || {}, now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate()), list = [];
+    const anchor = isISO(state.meta.calStart) ? fromISO(state.meta.calStart) : today;
+    let confessed = false;
     state.rule.forEach((r, i) => {
-      let start = new Date(now.getFullYear(), now.getMonth(), now.getDate()), rrule = "FREQ=DAILY";
-      if (r.cadence === "weekly") {
-        const named = WDN.findIndex((n) => r.text.toLowerCase().includes(n)); // "Sunday Mass" lands on a Sunday
-        if (named >= 0) start = L.shift(start, (named - start.getDay() + 7) % 7);
-        rrule = "FREQ=WEEKLY;BYDAY=" + WD[start.getDay()];
-      } else if (r.cadence === "monthly") {
-        if (start.getDate() > 28) start = new Date(start.getFullYear(), start.getMonth(), 28); // a day every month has
-        rrule = "FREQ=MONTHLY;BYMONTHDAY=" + start.getDate();
-      } else if (r.cadence === "yearly") {
-        if (start.getMonth() === 1 && start.getDate() === 29) start = new Date(start.getFullYear(), 1, 28);
-        rrule = "FREQ=YEARLY;BYMONTH=" + (start.getMonth() + 1) + ";BYMONTHDAY=" + start.getDate();
-      }
-      const id = /^[a-z0-9]{1,16}$/i.test(r.id) ? r.id : "r" + i, c = companionOf(r);
-      lines.push("BEGIN:VEVENT", "UID:" + id + "@illuminated-life", "DTSTAMP:" + stamp);
-      if (/^\d\d:\d\d$/.test(r.time)) lines.push("DTSTART:" + ymd(start) + "T" + r.time.replace(":", "") + "00", "DURATION:PT15M");
-      else lines.push("DTSTART;VALUE=DATE:" + ymd(start));
-      lines.push("RRULE:" + rrule, "SUMMARY:" + icsText(r.text));
-      if (r.note) lines.push("DESCRIPTION:" + icsText(r.note));
-      if (c) lines.push("URL:" + c.url.replace(/[\r\n]/g, ""));
-      lines.push("TRANSP:TRANSPARENT", "END:VEVENT");
+      const s = ruleSchedule(r), c = companionOf(r), conf = r.cadence === "monthly" && /^confession\b/.test(normTitle(r.text)); if (conf) confessed = true;
+      list.push({ uid: /^[a-z0-9]{1,16}$/i.test(r.id) ? r.id : "r" + i, kind: "practice", cadence: r.cadence, date: s.date, time: conf ? "" : r.time, minutes: /\bhour\b/i.test(r.text) ? 60 : 15, rrule: s.rrule,
+        summary: r.text, description: conf ? [r.note, "A reminder. Move it to the time your parish hears confessions."].filter(Boolean).join(" ") : r.note, url: c ? c.url : "", alarm: r.cadence === "daily" ? 5 : 10 });
     });
-    lines.push("END:VCALENDAR");
-    return lines.map(icsFold).join("\r\n") + "\r\n";
+    if (!confessed) { const s = confessionSchedule();
+      list.push({ uid: "confession", kind: "confession", date: s.date, rrule: s.rrule, summary: "Confession", description: "A reminder, " + state.church.confession + ". Move it to the time your parish hears confessions." }); }
+    // The season review: about ninety days after the season began, and every ninety days after that.
+    const F = state.focus ? fieldById(state.focus.field) : null; let rv = L.shift(F ? fromISO(state.focus.since) : anchor, 90), guard = 0;
+    while (rv < today && guard++ < 400) rv = L.shift(rv, 90);
+    list.push({ uid: "seasonreview", kind: "review", date: rv, rrule: "FREQ=DAILY;INTERVAL=90", summary: "Season review: walk the twelve fields",
+      description: (F ? "This season's field: " + F.name + ". " : "") + "Give thanks, look again at the twelve, and ask which field is next." });
+    if (isISO(state.steward.baptism)) { // the anniversary of Baptism, every year, as a whole day
+      const [, bm, bd0] = state.steward.baptism.split("-").map(Number), bd = bm === 2 && bd0 === 29 ? 28 : bd0;
+      let when = new Date(now.getFullYear(), bm - 1, bd); if (L.iso(when) < L.iso(now)) when = new Date(now.getFullYear() + 1, bm - 1, bd);
+      list.push({ uid: "baptism", kind: "baptism", date: when, rrule: "FREQ=YEARLY;BYMONTH=" + bm + ";BYMONTHDAY=" + bd, summary: "The anniversary of my Baptism", description: "Give thanks, and renew the promises of Baptism." });
+    }
+    if (o.feasts) { // the principal feasts of the twelve months ahead: single whole days, nothing repeating
+      const from = L.iso(today), to = L.iso(L.shift(today, 365));
+      L.principal(today.getFullYear()).concat(L.principal(today.getFullYear() + 1)).filter((f) => f.date >= from && f.date < to)
+        .forEach((f) => list.push({ uid: "feast" + f.date.replace(/-/g, ""), kind: "feast", date: fromISO(f.date), summary: f.name, description: "From the calendar of Illuminated Life. Your diocese may keep this day differently." }));
+    }
+    return list;
+  }
+  function makeICS(opts) { const stamp = icsStamp(); return icsWrap("Illuminated Life", calendarEvents(opts).reduce((all, e) => all.concat(icsEvent(e, stamp)), [])); }
+  // Hands the whole Rule to the calendar as one file. The first time, today is remembered as the day the dates are counted from.
+  function exportCalendar() {
+    if (!canSave()) return Promise.resolve(false);
+    if (!isISO(state.meta.calStart)) { state.meta.calStart = todayISO(); save(); writeNow(); } // written at once: the file about to be saved depends on it
+    return saveFile("illuminated-life.ics", makeICS({ feasts: state.prefs.icsFeasts }), "text/calendar;charset=utf-8").then((ok) => { if (ok) flash(PREVIEW ? "Saved as a zip. Open it, then open the calendar file inside." : "Calendar file saved. Open it to add your Rule."); return ok; });
   }
   // A backup is checked and normalised before anything is stored. A bad file changes nothing.
   function restore(text) {
@@ -910,7 +1217,7 @@
     clearTimeout(saveTimer); dirty = false; unreadable = null;
     try { localStorage.setItem(KEY, JSON.stringify(next)); storageOK = true; }
     catch (e) { return flash("Could not save on this device. Nothing was changed."); }
-    state = next; ui.open = null; ui.day = null; ui.mem = {};
+    state = next; ui.open = null; ui.day = null; ui.mem = {}; icoReset();
     go("today"); flash("Restored");
   }
   function markBackup() { state.meta.lastBackup = new Date().toISOString(); save(); const el = document.getElementById("last-backup"); if (el) el.textContent = "Last backup: " + fmt(new Date(), { day: "numeric", month: "long", year: "numeric" }); }
@@ -953,6 +1260,261 @@
     render(); focusDay(ui.calFocus);
   });
 
+  /* ───────── The Icon Screen: a mirror in five panels ─────────
+     The words and the scoring are in js/icons.js. Here are only the screens.
+     Answers to panels I, II, III and V are kept as a draft, so a sitting can be paused.
+     Answers to the Shadow Panel are held in ui.ico.shadow, in memory, and are never written anywhere.
+     Its one-line result is stored only if the person ticks the box. */
+  const icoLatest = () => (state.icono.results.length ? state.icono.results[state.icono.results.length - 1] : null);
+  const icoPanelOf = (step) => Math.max(0, Math.min(4, Number(String(step).slice(1)) - 1));
+  const icoFind = (list, id) => list.find((x) => x.id === id);
+  const icoVice = (dr) => ui.ico.shadow.vice || (dr && dr.vice) || "";
+  const glyph = (id, size = 44) => `<svg width="${size}" height="${size}" viewBox="0 0 48 48" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICONO.glyphs[id] || ""}</svg>`;
+  // The order in which answers are shown. It is fixed, so the screen is the same every time, but it is not the order of the scoring.
+  const DWELL_ORDER = [[2, 0, 4, 1, 3], [1, 3, 0, 2], [3, 0, 2, 1], [0, 2, 1, 3], [2, 3, 0, 1], [1, 0, 3, 2]];
+  const turned = (n, by) => Array.from({ length: n }, (_, i) => (i + by) % n);
+
+  function icoHead(step) {
+    const i = icoPanelOf(step), P = ICONO.panels[i], shows = step[0] === "r";
+    return `<p class="rub icoprog" id="ico-progress">Panel ${P.n} of V · ${esc(P.name)}</p>
+      <div class="icobar" aria-hidden="true">${ICONO.panels.map((_, k) => `<i class="${k < i || (k === i && shows) ? "done" : k === i ? "now" : ""}"></i>`).join("")}</div>
+      <h1 class="h1">${esc(P.name)}</h1>
+      ${shows ? `<p class="sub">${esc(P.asks)}. What this panel shows, for now.</p>` : `<p class="lede">${esc(P.lede)}</p>`}`;
+  }
+  function icoFoot(next, extra) {
+    return `${ui.ico.del === "draft" ? `<div class="confirm" role="group" aria-label="Discard this sitting"><p>Discard this sitting? The answers so far are removed from this device.</p>
+        <div class="btnrow"><button class="gold-btn" data-act="icodiscard2">Yes, discard it</button><button class="pill" data-act="icokeepgoing">Keep going</button></div></div>` : ""}
+      <div class="btnrow mt icofoot"><button class="pill" data-act="icoback">Back</button>${extra || ""}<button class="gold-btn" data-act="iconext">${next}</button></div>
+      <p class="note">You can stop at any point. Your place is kept on this device.</p><button class="link quiet" data-act="icodiscard">Discard this sitting</button>`;
+  }
+  const icoOpt = (kind, i, k, value, checked, text) => `<label class="opt"><input type="radio" id="ico-${kind}-${i}-${k}" name="ico-${kind}-${i}" value="${esc(value)}" data-ico="${kind}" data-i="${i}" ${checked ? "checked" : ""}><span>${esc(text)}</span></label>`;
+  const icoQ = (kind, i, text, opts, cls = "") => `<fieldset class="pane q" id="q-${kind}-${i}"><legend><span class="qn" aria-hidden="true">${i + 1}</span><span>${esc(text)}</span></legend><div class="opts ${cls}">${opts}</div></fieldset>`;
+
+  function lampsRow(levels) {
+    const part = { dormant: 0.12, steady: 0.5, awake: 1 };
+    return `<ul class="lamps7" aria-label="The seven lamps">${ICONO.gifts.map((g) => { const st = icono.lampState(levels[g.id]);
+      return `<li class="l-${st}"><span class="lampwrap">${badge("flame", st === "awake")}<svg class="lamp" viewBox="0 0 44 44" aria-hidden="true"><circle class="lt" cx="22" cy="22" r="20"/><circle class="lp" cx="22" cy="22" r="20" style="stroke-dashoffset:${(125.6 - 125.6 * part[st]).toFixed(1)}"/></svg></span><b>${esc(g.name)}</b><span>${esc(ICONO.lamps.states[st])}</span></li>`; }).join("")}</ul>`;
+  }
+
+  function IcoIntro() {
+    const I = ICONO.intro, last = icoLatest(), soon = last && L.daysBetween(fromISO(last.date), new Date()) < 183;
+    return `<h1 class="h1">${esc(I.title)}</h1><p class="lede">${esc(I.lede)}</p>
+      <div class="prose">${I.text.map((t) => `<p>${esc(t)}</p>`).join("")}</div>
+      <div class="pane pad"><span class="rub">Five panels</span><ol class="panels">${ICONO.panels.map((P) => `<li><span class="pn">${P.n}</span><span><b>${esc(P.name)}</b><span>${esc(P.asks)}</span></span></li>`).join("")}</ol>
+        <p class="note">${esc(I.order)}</p></div>
+      ${soon ? `<div class="pane lit pad" id="ico-soon"><span class="rub">A gentle word</span><p class="sub">You last sat with this on ${esc(prettyISO(last.date))}. Once a year is enough. A mirror looked into too often shows only the looking. You may still go on.</p></div>` : ""}
+      <div class="pane quiet pad center"><span class="rub">Before you begin</span><p class="vtext sm center">${esc(I.prayer)}</p></div>
+      <div class="btnrow"><button class="gold-btn" data-act="icostart">Begin with Panel I</button>${last ? `<button class="pill" data-act="icohome">Back to my result</button>` : ""}</div>
+      <p class="note">Everything stays on this device. Nothing is sent anywhere. You can pause between panels and come back.</p>`;
+  }
+
+  function IcoStep(dr) {
+    if (dr.step === "r4" && !icoVice(dr)) dr.step = "p4"; // the Shadow answers did not survive a reload, by design
+    const step = dr.step, D = ICONO.dwelling, Lm = ICONO.lamps, Sh = ICONO.shadow, Th = ICONO.threshold;
+    let h = icoHead(step);
+    if (step === "p1") {
+      h += D.questions.map((q, i) => icoQ("d", i, q.q, DWELL_ORDER[i].map((k) => icoOpt("d", i, k, k, dr.d[i] === k, q.a[k][0])).join(""))).join("") + icoFoot("See what this shows");
+    } else if (step === "r1") {
+      const res = icono.dwelling(dr.d), B = D.bands[res.band];
+      h += `<div class="pane lit pad"><span class="rub">${esc(D.lead)}</span><h2 class="h2">${esc(B.name)}</h2><p class="sub">${esc(B.dwellings)}</p><p class="mt">${esc(B.about)}</p><p class="telos">${esc(B.counsel)}</p></div>
+        <p class="note">${esc(D.notRank)}</p><p class="note">${esc(D.further)}</p>
+        <p class="care">${esc(D.safety)}</p>${crisisNote()}` + icoFoot("Go on to Panel II");
+    } else if (step === "p2") {
+      h += Lm.statements.map(([, text], i) => icoQ("l", i, text, ICONO.scale.map((label, k) => icoOpt("l", i, k, k, dr.l[i] === k, label)).join(""), "scale")).join("") + icoFoot("See what this shows");
+    } else if (step === "r2") {
+      const res = icono.lamps(dr.l), name = (id) => icoFind(ICONO.gifts, id).name;
+      h += `<div class="pane quiet pad">${lampsRow(res.levels)}</div>
+        ${res.awake.length ? `<div class="pane pad"><span class="rub">Awake</span><p class="telos">${res.awake.map((id) => esc(name(id))).join(" · ")}</p>${res.awake.map((id) => `<p class="sub"><b>${esc(name(id))}.</b> ${esc(icoFind(ICONO.gifts, id).is)}</p>`).join("")}</div>` : `<p class="note">${esc(Lm.noneAwake)}</p>`}
+        <div class="pane lit pad"><span class="rub">Dormant</span><p>${esc(Lm.teaching)}</p>
+          ${res.dormant.length ? `<ul class="petitions">${res.dormant.map((id) => `<li><b>${esc(name(id))}</b><span class="pray">${esc(icoFind(ICONO.gifts, id).petition)}</span></li>`).join("")}</ul>` : `<p class="sub">${esc(Lm.noneDormant)}</p>`}</div>
+        <p class="note">The seven gifts of the Holy Spirit: ${esc(ICONO.panels[1].ref)}. A lamp here records what you said about your days. It does not measure grace.</p>` + icoFoot("Go on to Panel III");
+    } else if (step === "p3") {
+      h += `<div class="scenes" role="group" aria-label="Twelve scenes. Choose four.">${ICONO.scenes.map((sc) => `<label class="scene"><input type="checkbox" id="ico-s-${sc.id}" data-ico="s" value="${esc(sc.id)}" ${dr.s.includes(sc.id) ? "checked" : ""}><span class="glyph">${glyph(sc.id)}</span><span class="sct"><b>${esc(sc.title)}</b><em>${esc(sc.ref)}</em><span>${esc(sc.text)}</span></span></label>`).join("")}</div>
+        <p class="note center" id="ico-count" role="status">${dr.s.length} of ${ICONO.icon.pick} chosen</p>` + icoFoot("See what this shows");
+    } else if (step === "r3") {
+      const res = icono.charisms(dr.s);
+      h += `<div class="chosen" aria-hidden="true">${dr.s.map((id) => `<span class="glyph">${glyph(id, 36)}</span>`).join("")}</div>
+        ${res.top.map((id) => { const c = icoFind(ICONO.charisms, id); return `<div class="pane pad"><span class="rub">A charism to test</span><h2 class="h2">${esc(c.name)}${c.also ? `<span class="ringsub"> · ${esc(c.also)}</span>` : ""}</h2>
+          <ul class="quest">${c.forms.map((f) => `<li>${esc(f)}</li>`).join("")}</ul><p class="oblige"><b>${esc(ICONO.icon.lead)}</b> ${esc(c.offer)}</p></div>`; }).join("")}
+        <div class="pane lit pad"><p class="telos">${esc(ICONO.icon.test)}</p><p class="vref">${esc(ICONO.icon.ref)}</p></div>
+        <p class="note">You chose scenes, and the scenes lean toward gifts. That leaning is a guess. The Church tests charisms by their fruit and by her pastors, not by attraction alone.</p>` + icoFoot("Go on to Panel IV");
+    } else if (step === "p4") {
+      h += `<div class="pane quiet pad"><p class="sub">${esc(Sh.skip)}</p><p class="note mt"><b>${esc(Sh.private)}</b></p><div class="btnrow mt"><button class="pill" data-act="icoskip">Skip this panel</button></div></div>
+        ${Sh.scenarios.map((sc, i) => icoQ("x", i, sc.q, turned(sc.a.length, i * 2).map((k) => icoOpt("x", i, k, sc.a[k][0], ui.ico.shadow.a[i] === sc.a[k][0], sc.a[k][1])).join("") + icoOpt("x", i, "none", "", false, "None of these."))).join("")}` + icoFoot("See what this shows", `<button class="pill" data-act="icoskip">Skip</button>`);
+    } else if (step === "r4") {
+      const v = icoVice(dr), V = icoFind(ICONO.vices, v), l = icono.lamps(dr.l), c = icono.charisms(dr.s);
+      const pair = l && c ? icono.pairing(v, { lamps: l.levels, charisms: c.top }) : null, F = fieldById(V.practice.field);
+      h += `<div class="pane pad"><span class="rub">${esc(Sh.lead)}</span><h2 class="h2">${esc(V.name)}</h2><p class="sub">${esc(V.is)}</p>
+          <p class="mt"><span class="rub inl">The opposite virtue</span>${esc(V.virtue)}</p>
+          <p class="telos">${esc(V.practice.title)}.</p><p class="note">One small practice of ${esc(lower(V.virtue))}, in the field of ${fname(F)}. Small is the point.</p></div>
+        <div class="pane lit pad"><p>${esc(Sh.teaching)}</p>${pair ? `<p class="sub"><b>A likely pairing: ${esc(pair.name)} and ${esc(lower(V.name))}.</b> ${esc(pair.text)}</p>` : ""}</div>
+        <p class="gently">${esc(Sh.gently)}</p>
+        <div class="pane pad"><label class="check"><input type="checkbox" id="ico-keep" data-ico="keep" ${dr.vice ? "checked" : ""}><span>${esc(Sh.keep)}</span></label><p class="note">${esc(Sh.keepNote)}</p></div>` + icoFoot("Go on to Panel V");
+    } else if (step === "p5") {
+      h += Th.questions.map((q, i) => icoQ("t", i, q.q, turned(7, i * 3).map((k) => icoOpt("t", i, k, ICONO.registers[k].id, dr.t[i] === ICONO.registers[k].id, q.a[k])).join(""))).join("") + icoFoot("See what this shows");
+    } else if (step === "r5") {
+      const res = icono.threshold(dr.t);
+      h += res.top.map((id, n) => { const R = icoFind(ICONO.registers, id); return `<div class="pane pad"><span class="rub">${n === 0 ? "The likeliest register" : "And close beside it"}</span><h2 class="h2">${esc(R.name)}</h2><p>${esc(R.is)}</p>
+          <dl class="facts"><div><dt>A patron</dt><dd>${esc(R.patron)}</dd></div><div><dt>A Doctor ${esc(Th.company)}</dt><dd>${esc(R.doctor)}</dd></div></dl></div>`; }).join("")
+        + `<div class="pane lit pad"><p style="margin:0">${esc(Th.note)}</p></div>` + icoFoot("Put the five together");
+    }
+    return h;
+  }
+
+  // What is said about one stored result: plain strings, ready for esc().
+  function icoWords(r) {
+    const sum = icono.lampSummary(r.lamps), names = (list, ids) => ids.map((id) => icoFind(list, id).name).join(", ");
+    return { band: ICONO.dwelling.bands[r.band].name, awake: names(ICONO.gifts, sum.awake) || "none yet", dormant: names(ICONO.gifts, sum.dormant) || "none",
+      charisms: names(ICONO.charisms, r.charisms), registers: names(ICONO.registers, r.registers) };
+  }
+  function IcoHome() {
+    const rs = state.icono.results, r = rs[rs.length - 1], sitting = ui.ico.sitting === r.date;
+    const S = icono.synthesis(r, sitting ? ui.ico.shadow.vice : ""), T = ICONO.synthesis, I = ICONO.intro;
+    const part = (k, body) => `<div class="pane pad synth"><span class="rub">${esc(T.parts[k])}<span class="from"> · ${esc(T.says[k])}</span></span>${body}</div>`;
+    const prev = rs.length > 1 ? rs[rs.length - 2] : null, A = prev ? icoWords(prev) : null, B = icoWords(r);
+    const inRule = (title) => state.rule.some((x) => x.text === title);
+    const cadWord = { day: "each day", week: "each week", month: "each month", year: "each year" };
+    return `<p class="rub icoprog">The Icon Screen · ${esc(prettyISO(r.date))}</p><h1 class="h1">${esc(T.title)}</h1>
+      <p class="lede">Five panels, one page. Provisional. Show it to a director, or to the friend who tells you the truth.</p>
+      ${part("tone", `<h2 class="h2">${esc(S.tone.band)}</h2><p class="sub">${esc(S.tone.dwellings)}</p><p class="mt">${esc(S.tone.text)}</p>`)}
+      ${part("ask", `<div class="pane-in">${lampsRow(S.ask ? icono.lampSummary(r.lamps).levels : {})}</div><h2 class="h2">Ask for ${esc(lower(S.ask.name))}</h2><p class="vtext sm">${esc(S.ask.petition)}</p>
+        <p class="sub mt"><b>The prayer that feeds you now</b> (${esc(lower(S.ask.feedsName))} is your brightest lamp): ${esc(lower(S.ask.feeds))}</p>`)}
+      ${part("mission", `<h2 class="h2">${esc(B.charisms)}</h2><p class="telos">${esc(S.mission.title)}, ${cadWord[S.mission.cadence]}.</p>
+        <p class="note">A standing service for the field of ${fname(fieldById("mission"))}. Change the words until they are true of your life.</p>
+        <div class="btnrow mt"><button class="pill gold" data-act="icoadd" data-k="mission" ${inRule(S.mission.title) ? "disabled" : ""}>${inRule(S.mission.title) ? "In my Rule" : "Add the mission item to my Rule"}</button></div>`)}
+      ${part("ascetical", S.ascetical ? `<h2 class="h2">${esc(S.ascetical.virtue)}</h2><p class="sub">The tradition would look first at ${esc(lower(S.ascetical.name))}. The remedy is its opposite.</p><p class="telos">${esc(S.ascetical.title)}, ${cadWord[S.ascetical.cadence]}.</p>
+        ${S.pairing ? `<p class="sub"><b>A likely pairing: ${esc(S.pairing.name)} and ${esc(lower(S.ascetical.name))}.</b> ${esc(S.pairing.text)}</p>` : ""}
+        <p class="note">${S.ascetical.kept ? "Kept on this device, because you asked." : "Shown for this sitting only. It is not saved, and will be gone when you close the app."}</p>
+        <div class="btnrow mt"><button class="pill gold" data-act="icoadd" data-k="practice" ${inRule(S.ascetical.title) ? "disabled" : ""}>${inRule(S.ascetical.title) ? "In my Rule" : "Add the practice to my Rule"}</button>${S.ascetical.kept ? `<button class="pill" data-act="icoforget">Forget this result</button>` : ""}</div>`
+        : `<p class="sub">${esc(ICONO.shadow.notKept)} Nothing is missing that confession and direction cannot supply.</p>`)}
+      ${part("register", `<h2 class="h2">${esc(B.registers)}</h2><dl class="facts"><div><dt>A patron</dt><dd>${esc(S.register.patron)}</dd></div><div><dt>A Doctor ${esc(ICONO.threshold.company)}</dt><dd>${esc(S.register.doctor)}</dd></div></dl>
+        ${S.register.also ? `<p class="sub">Close beside it, ${esc(lower(S.register.also.name))}: ${esc(S.register.also.patron)}${S.register.also.doctor !== S.register.also.patron ? ", with " + esc(S.register.also.doctor) : ""}.</p>` : ""}
+        <p class="note">This is a register of service. It does not tell you your state of life. No instrument can.</p>
+        <div class="btnrow mt"><button class="pill gold" data-act="icosteward">Put patron and gifts on my steward card</button></div>`)}
+      ${PREVIEW ? "" : `<div class="btnrow"><button class="gold-btn" data-act="icoprint">Print / save as PDF</button></div>`}
+      <div class="lastwords"><p>${esc(I.last[0])}</p><p>${esc(I.last[1])}</p></div>
+      ${prev ? `<h2 class="h2 mt">Then and now</h2><div class="pane pad"><table class="thennow"><caption class="vh">The earlier result beside the latest</caption>
+        <thead><tr><td></td><th scope="col">${esc(prettyISO(prev.date))}</th><th scope="col">${esc(prettyISO(r.date))}</th></tr></thead><tbody>
+        ${[["Dwelling", A.band, B.band], ["Lamps awake", A.awake, B.awake], ["Lamps dormant", A.dormant, B.dormant], ["Charisms", A.charisms, B.charisms], ["Register", A.registers, B.registers]].map(([k, a, b]) => `<tr><th scope="row">${k}</th><td>${esc(a)}</td><td class="${a === b ? "" : "chg"}">${esc(b)}</td></tr>`).join("")}</tbody></table>
+        <p class="note mt">A change is not progress or decline. It is a different season. ${rs.length > 2 ? rs.length + " sittings are kept on this device." : ""}</p></div>` : ""}
+      <div class="pane quiet pad"><span class="rub">Again, or not at all</span><p class="sub">Everything here stays on this device. It is part of your backup.</p>
+        <div class="btnrow mt"><button class="pill" data-act="icoagain">Sit with it again</button><button class="pill" data-act="icodel1">Delete my Icon Screen results</button></div>
+        ${ui.ico.del === "results" ? `<div class="confirm mt" role="group" aria-label="Delete my Icon Screen results"><p>Delete every Icon Screen result from this device? This cannot be undone.</p><div class="btnrow"><button class="gold-btn" data-act="icodel2">Yes, delete them</button><button class="pill" data-act="icokeepgoing">Keep them</button></div></div>` : ""}</div>`;
+  }
+  function Icono() {
+    const dr = state.icono.draft;
+    if (dr && ui.ico.view !== "intro") return IcoStep(dr);
+    if (ui.ico.view === "intro" || !state.icono.results.length) return IcoIntro();
+    return IcoHome();
+  }
+  // One printed page.
+  function IconBook() {
+    const r = icoLatest(); if (!r) return "";
+    const S = icono.synthesis(r, ui.ico.sitting === r.date ? ui.ico.shadow.vice : ""), W = icoWords(r), I = ICONO.intro, T = ICONO.synthesis;
+    return `<div class="bp bicon"><p class="bkick">THE ICON SCREEN · ${esc(prettyISO(r.date))}</p><h1>${esc(T.title)}</h1>
+      <p><i>Provisional. A description of the material, to be shown to a director or to the friend who tells you the truth.</i></p>
+      <div class="ba"><h3>${esc(T.parts.tone)}: ${esc(S.tone.band)} (${esc(S.tone.dwellings)})</h3><p>${esc(S.tone.text)}</p><p>${esc(S.tone.counsel)}</p></div>
+      <div class="ba"><h3>${esc(T.parts.ask)}: ${esc(lower(S.ask.name))}</h3><p><i>${esc(S.ask.petition)}</i></p><p>Lamps awake: ${esc(W.awake)}. Dormant: ${esc(W.dormant)}. Dormant is not absent.</p><p>The prayer that feeds you now: ${esc(lower(S.ask.feeds))}</p></div>
+      <div class="ba"><h3>${esc(T.parts.mission)}: ${esc(W.charisms)}</h3><p>${esc(S.mission.title)}.</p><p>${esc(ICONO.icon.test)}</p></div>
+      ${S.ascetical ? `<div class="ba"><h3>${esc(T.parts.ascetical)}: ${esc(lower(S.ascetical.virtue))}</h3><p>The tradition would look first at ${esc(lower(S.ascetical.name))}. ${esc(S.ascetical.title)}.</p><p>Only a confessor can judge sin. Bring this one sentence to confession and to direction.</p></div>` : ""}
+      <div class="ba"><h3>${esc(T.parts.register)}: ${esc(W.registers)}</h3><p>A patron: ${esc(S.register.patron)}. A Doctor ${esc(ICONO.threshold.company)}: ${esc(S.register.doctor)}.</p><p>${esc(ICONO.threshold.note)}</p></div>
+      <p class="bend"><i>${esc(I.last[0])}</i></p></div>`;
+  }
+
+  function icoShow() {
+    render({ nav: true }); window.scrollTo(0, 0);
+    const h1 = root.querySelector("main h1"); if (h1) { h1.tabIndex = -1; try { h1.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } }
+  }
+  function icoTo(step) { const dr = state.icono.draft; if (!dr) return; dr.step = step; ui.ico.del = false; save(); icoShow(); }
+  // What is still open on a panel: a message and the first place to look, or null when it is complete.
+  function icoOpen(dr) {
+    const count = (list) => list.filter((v) => v == null).length, first = (kind, list) => "#q-" + kind + "-" + list.findIndex((v) => v == null);
+    const say = (n, one, many) => (n === 1 ? "One " + one + " is still open." : n + " " + many + " are still open.");
+    if (dr.step === "p1" && count(dr.d)) return { msg: say(count(dr.d), "question", "questions"), sel: first("d", dr.d) };
+    if (dr.step === "p2" && count(dr.l)) return { msg: say(count(dr.l), "statement", "statements"), sel: first("l", dr.l) };
+    if (dr.step === "p3" && dr.s.length !== ICONO.icon.pick) return { msg: "Choose four scenes. You have chosen " + dr.s.length + ".", sel: ".scenes" };
+    if (dr.step === "p4" && !icono.shadow(ui.ico.shadow.a)) return { msg: "Answer at least four, or skip this panel.", sel: "#q-x-0" };
+    if (dr.step === "p5" && count(dr.t)) return { msg: say(count(dr.t), "question", "questions"), sel: first("t", dr.t) };
+    return null;
+  }
+  function icoFinish() {
+    const dr = state.icono.draft; if (!dr) return;
+    const d = icono.dwelling(dr.d), l = icono.lamps(dr.l), c = icono.charisms(dr.s), t = icono.threshold(dr.t);
+    if (!d || !l || !c || !t) { flash("One panel is not finished yet."); return icoTo(!d ? "p1" : !l ? "p2" : !c ? "p3" : "p5"); }
+    const res = icono.clean({ date: todayISO(), band: d.band, lamps: l.levels, charisms: c.top, registers: t.top, vice: dr.vice });
+    if (!res) return flash("That could not be put together. Nothing was changed.");
+    if (!ui.ico.shadow.vice && dr.vice) ui.ico.shadow.vice = dr.vice;
+    ui.ico.shadow.a = []; ui.ico.sitting = res.date; ui.ico.view = null; ui.ico.del = false;
+    commitIcono({ results: state.icono.results.filter((x) => x.date !== res.date).concat(res), draft: null });
+    icoShow();
+  }
+  // Results go the long way round: merged, normalised, saved.
+  function commitIcono(next) { state = normalise(Object.assign({}, state, { icono: next })); save(); }
+
+  function icoAnswer(el) {
+    const kind = el.dataset.ico, i = Number(el.dataset.i), dr = state.icono.draft;
+    if (kind === "x") { // the Shadow Panel: memory only, never saved
+      if (i >= 0 && i < ICONO.shadow.scenarios.length) ui.ico.shadow.a[i] = icono.VICE_IDS.includes(el.value) ? el.value : null;
+      return;
+    }
+    if (!dr) return;
+    const n = Number(el.value);
+    if (kind === "d" && dr.d[i] !== undefined && ICONO.dwelling.questions[i].a[n]) dr.d[i] = n;
+    else if (kind === "l" && dr.l[i] !== undefined && n >= 0 && n <= 3) dr.l[i] = n;
+    else if (kind === "t" && dr.t[i] !== undefined && icono.REGISTER_IDS.includes(el.value)) dr.t[i] = el.value;
+    else if (kind === "s" && icono.SCENE_IDS.includes(el.value)) {
+      if (el.checked) {
+        if (dr.s.length >= ICONO.icon.pick) { el.checked = false; return flash("Four scenes only. Let one go to choose another."); }
+        if (!dr.s.includes(el.value)) dr.s.push(el.value);
+      } else dr.s = dr.s.filter((id) => id !== el.value);
+      const c = document.getElementById("ico-count"); if (c) c.textContent = dr.s.length + " of " + ICONO.icon.pick + " chosen";
+    } else if (kind === "keep") {
+      if (el.checked) dr.vice = icoVice(dr); else { if (!ui.ico.shadow.vice) ui.ico.shadow.vice = dr.vice; dr.vice = ""; }
+    } else return;
+    save();
+  }
+
+  const icoActs = {
+    icostart: () => { ui.ico.view = null; ui.ico.shadow = { a: [], vice: "", keep: false }; ui.ico.sitting = ""; ui.ico.del = false;
+      commitIcono({ results: state.icono.results, draft: { step: "p1" } }); icoShow(); },
+    icohome: () => { ui.ico.view = null; icoShow(); },
+    icoagain: () => { ui.ico.view = "intro"; ui.ico.del = false; icoShow(); },
+    iconext: () => { const dr = state.icono.draft; if (!dr) return;
+      if (dr.step[0] === "p") { const open = icoOpen(dr);
+        if (open) { flash(open.msg); const q = root.querySelector(open.sel); if (q) { q.scrollIntoView({ block: "center" }); const f = q.querySelector("input"); if (f) { try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); } } } return; } }
+      if (dr.step === "p4") { ui.ico.shadow.vice = icono.shadow(ui.ico.shadow.a).vice; if (dr.vice) dr.vice = ui.ico.shadow.vice; }
+      if (dr.step === "r5") return icoFinish();
+      icoTo(ICO_STEPS[ICO_STEPS.indexOf(dr.step) + 1]); },
+    icoback: () => { const dr = state.icono.draft; if (!dr) return go("more");
+      if (dr.step === "p1") return go("more");
+      icoTo(dr.step === "p5" && !icoVice(dr) ? "p4" : ICO_STEPS[ICO_STEPS.indexOf(dr.step) - 1]); },
+    icoskip: () => { const dr = state.icono.draft; if (!dr) return; ui.ico.shadow = { a: [], vice: "", keep: false }; dr.vice = ""; icoTo("p5"); flash("Skipped. Nothing is counted against you."); },
+    icodiscard: () => { ui.ico.del = "draft"; render(); const y = root.querySelector('[data-act="icodiscard2"]'); if (y) { try { y.focus({ preventScroll: true }); } catch (e) { y.focus(); } y.scrollIntoView({ block: "nearest" }); } },
+    icodiscard2: () => { ui.ico.shadow = { a: [], vice: "", keep: false }; ui.ico.del = false; ui.ico.view = null; commitIcono({ results: state.icono.results, draft: null }); icoShow(); flash("This sitting is discarded"); },
+    icokeepgoing: () => { ui.ico.del = false; render(); },
+    icoadd: (el) => { const r = icoLatest(); if (!r) return; const S = icono.synthesis(r, ui.ico.sitting === r.date ? ui.ico.shadow.vice : ""), item = el.dataset.k === "practice" ? S.ascetical : S.mission;
+      if (!item) return; if (state.rule.some((x) => x.text === item.title)) return flash("Already in your Rule");
+      addPractice({ title: item.title, field: item.field, cadence: item.cadence, note: "From the Icon Screen" }); render(); flash("Added to your Rule, under " + fieldById(item.field).name); },
+    icosteward: () => { const r = icoLatest(); if (!r) return; const S = icono.synthesis(r), next = Object.assign({}, state.steward, { gifts: state.steward.gifts.slice() }); let changed = false;
+      if (!next.patron.trim()) { next.patron = S.register.patron; changed = true; }
+      r.charisms.map((id) => icoFind(ICONO.charisms, id).name).forEach((name) => { const free = next.gifts.findIndex((g) => !g.trim()); if (free >= 0 && !next.gifts.some((g) => g.trim().toLowerCase() === name.toLowerCase())) { next.gifts[free] = name; changed = true; } });
+      if (!changed) return flash("Your steward card already has a patron and three gifts. It was left as it is.");
+      commit({ steward: next }); flash("Placed on your steward card, in your Rule"); },
+    icoforget: () => { ui.ico.shadow.vice = ""; commitIcono({ results: state.icono.results.map((x) => Object.assign({}, x, { vice: "" })), draft: state.icono.draft }); render(); flash("The Shadow result is forgotten"); },
+    icodel1: () => { ui.ico.del = "results"; render(); const y = root.querySelector('[data-act="icodel2"]'); if (y) { try { y.focus({ preventScroll: true }); } catch (e) { y.focus(); } y.scrollIntoView({ block: "nearest" }); } },
+    icodel2: () => { icoReset(); commitIcono({ results: [], draft: null }); icoShow(); flash("Your Icon Screen results are deleted"); }
+  };
+
+  /* ───────── the Guide, My day and the calendar screen (js/guide.js) ─────────
+     They are drawn by that file, with the helpers of this one. What they save goes through IL.api. */
+  const showScreen = () => { render({ nav: true }); window.scrollTo(0, 0); const h1 = root.querySelector("main h1"); if (h1) { h1.tabIndex = -1; try { h1.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } } };
+  const G = GUIDE ? GUIDE.mount({
+    esc, icon, badge, fname, rc, bead, outLink, crisisNote, fmt, pretty, longDate, fromISO, isISO, isTime, todayISO, fieldById, compById, companionOf, periodKey, litDay, normTitle, ruleWeekday,
+    WEEKDAYS, CONFESSION, DEFAULT_FLOOR: blank().floor, PREVIEW, root, caps, canSave, saveFile, exportCalendar, calendarEvents, icsEvent, icsWrap, icsStamp,
+    state: () => state, ui, save, render, show: showScreen, flash, go, icoLatest: () => icoLatest(),
+    print: (kind) => { ui.printKind = kind; ui.printing = true; writeNow(); render(); setTimeout(() => window.print(), 60); }
+  }) : null;
+
   /* ───────── events ───────── */
   const acts = {
     tab: (el) => go(el.dataset.t),
@@ -975,19 +1537,21 @@
     focusno: () => { ui.confirmFocus = null; render(); },
     place: (el) => { const f = fieldById(el.dataset.f); if (!f) return; const text = (state.fields[f.id].spend || "").trim().slice(0, 300); if (!text) return flash("Write your Spend line first");
       const sel = document.getElementById("cad-" + f.id), cad = sel && CADENCES.includes(sel.value) ? sel.value : "weekly";
-      state.rule.push({ id: uid(), cadence: cad, text, time: "", note: f.name, field: f.id, done: null, companion: "", link: "" }); save(); flash("Placed in your Rule, " + cad); },
+      addPractice({ title: text, cadence: cad, note: f.name, field: f.id }); flash("Placed in your Rule, " + cad); },
     addrule: () => { const val = (id) => { const n = document.getElementById(id); return n ? n.value : ""; };
       const text = val("new-text").trim().slice(0, 300); if (!text) return flash("Say what the practice is");
       let companion = val("new-comp"), link = "";
       if (companion === "custom") { link = safeURL(val("new-link")); if (!link) return flash("That link is not a web address. Begin it with https://"); }
       else if (!compById(companion)) companion = "";
       const cad = val("new-cad"), time = val("new-time"), field = val("new-field");
-      state.rule.push({ id: uid(), cadence: CADENCES.includes(cad) ? cad : "daily", text, time: /^\d\d:\d\d$/.test(time) ? time : "", note: "", field: fieldById(field) ? field : "", done: null, companion, link });
-      save(); render(); const t = document.getElementById("new-text"); if (t) t.value = ""; flash("Added to your Rule"); },
+      addPractice({ title: text, cadence: cad, time, field, companion, link });
+      render(); const t = document.getElementById("new-text"); if (t) t.value = ""; flash("Added to your Rule"); },
     editrule: (el) => { ui.editRule = ui.editRule === el.dataset.id ? null : el.dataset.id; renderAnchored(`[data-act="editrule"][data-id="${cssq(el.dataset.id)}"]`); },
     delrule: (el) => { state.rule = state.rule.filter((r) => r.id !== el.dataset.id); save(); render(); flash("Removed from your Rule"); },
-    ics: () => { download("illuminated-life-rule.ics", makeICS(), "text/calendar;charset=utf-8"); flash("Calendar file saved. Open it to add your Rule."); },
+    ics: () => { exportCalendar(); },
+    todayview: (el) => { state.prefs.todayView = el.dataset.v === "day" ? "day" : "list"; save(); render(); },
     print: () => { ui.printKind = "rule"; render(); setTimeout(() => window.print(), 60); },
+    icoprint: () => { ui.printKind = "icon"; ui.printing = true; writeNow(); render(); setTimeout(() => window.print(), 60); },
     printdiary: (el) => { const sel = document.getElementById("print-range"); ui.printRange = sel && ["day", "week", "month", "all"].includes(sel.value) ? sel.value : "month"; ui.day = isISO(el.dataset.d) ? el.dataset.d : null; ui.printKind = "diary"; ui.printing = true; writeNow(); render(); setTimeout(() => window.print(), 60); },
     diaryview: (el) => { checkDay(); ui.diaryView = el.dataset.v === "examen" ? "examen" : "diary"; render({ nav: true }); window.scrollTo(0, 0); pushRoute(); },
     dayshift: (el) => { const n = Number(el.dataset.n) || 0; ui.day = L.iso(L.shift(fromISO(viewDay()), n)); render(); },
@@ -995,7 +1559,8 @@
     opendiary: () => go("diary"),
     dayopen: (el) => { if (!isISO(el.dataset.d)) return; ui.day = el.dataset.d; render({ nav: true }); window.scrollTo(0, 0); },
     carry: (el) => { const d = el.dataset.d; if (!isISO(d)) return; const y = jGet(L.iso(L.shift(fromISO(d), -1))).p || {}; setPath("journal." + d + ".p", Object.assign({}, y)); save(); render(); flash("Carried forward"); },
-    download: () => { state.meta.lastBackup = new Date().toISOString(); download("illuminated-life-backup-" + todayISO() + ".json", JSON.stringify(state, null, 2), "application/json"); markBackup(); flash("Backup saved"); },
+    download: () => { const copy = JSON.parse(JSON.stringify(state)); copy.meta.lastBackup = new Date().toISOString();
+      saveFile("illuminated-life-backup-" + todayISO() + ".json", JSON.stringify(copy, null, 2), "application/json").then((ok) => { if (ok) { markBackup(); flash("Backup saved"); } }); },
     copybackup: () => { state.meta.lastBackup = new Date().toISOString(); const text = JSON.stringify(state), out = document.getElementById("backup-out"); if (!out) return; out.hidden = false; out.value = text; out.focus(); out.select(); markBackup();
       (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => flash("Copied. Paste it somewhere safe."), () => flash("Select the text and copy it.")); },
     importpaste: () => { const n = document.getElementById("backup-in"); restore(n ? n.value : ""); },
@@ -1006,14 +1571,18 @@
     calday: (el) => { if (!isISO(el.dataset.d)) return; ui.calDay = el.dataset.d; ui.calFocus = el.dataset.d; ui.calOpener = focusKey(el); render(); const sh = document.getElementById("daysheet"); if (sh) { try { sh.focus({ preventScroll: true }); } catch (e) { sh.focus(); } } },
     calstep: (el) => { if (!ui.calDay) return; const d = L.shift(fromISO(ui.calDay), Number(el.dataset.n) === -1 ? -1 : 1); if (d.getFullYear() < 1970 || d.getFullYear() > 2200) return; ui.calDay = ui.calFocus = L.iso(d); ui.cal = { y: d.getFullYear(), m: d.getMonth() }; if (ui.calView === "week") ui.calWeek = ui.calDay; render(); },
     calclose: () => closeSheet(),
+    ...(G ? G.acts : {}),
+    gosteward: () => { go("rule"); const el = document.getElementById("steward"); if (el) { el.scrollIntoView({ block: "start" }); window.scrollBy(0, -70); } },
+    ...icoActs,
     erase1: () => { const b = document.getElementById("erase2"); if (b) { b.hidden = false; b.focus(); } },
-    erase2: () => { dirty = false; clearTimeout(saveTimer); unreadable = null; try { localStorage.removeItem(KEY); localStorage.removeItem(KEY + "-unreadable"); } catch (e) { /* nothing stored */ } state = blank(); ui.mem = {}; ui.open = null; ui.day = null; go("today"); flash("Erased"); }
+    erase2: () => { dirty = false; clearTimeout(saveTimer); unreadable = null; try { localStorage.removeItem(KEY); localStorage.removeItem(KEY + "-unreadable"); } catch (e) { /* nothing stored */ } state = blank(); ui.mem = {}; ui.open = null; ui.day = null; icoReset(); go("today"); flash("Erased"); }
   };
 
   root.addEventListener("click", (e) => { const el = e.target.closest("[data-act]"); if (el && root.contains(el) && Object.prototype.hasOwnProperty.call(acts, el.dataset.act)) acts[el.dataset.act](el); });
   root.addEventListener("input", (e) => {
     const el = e.target;
     if (el.dataset.mem) { ui.mem[el.dataset.mem] = el.value; return; } // kept for this sitting only, never stored
+    if (G && G.onInput(el)) return;
     if (el.id === "new-comp") { const l = document.getElementById("new-link"); if (l) l.hidden = el.value !== "custom"; return; }
     if (el.dataset.bind) {
       setPath(el.dataset.bind, el.value); save();
@@ -1028,6 +1597,8 @@
     if (el.dataset.toggle === "sundayFeasts") { state.prefs.sundayFeasts = !!el.checked; save(); render(); }
     if (el.id === "cal-region") { state.prefs.region = el.value === "nl" ? "nl" : "general"; save(); render(); flash("Calendar: " + L.REGIONS[state.prefs.region]); }
     if (el.id === "cal-jump" && isISO(el.value)) { const d = fromISO(el.value); ui.cal = { y: d.getFullYear(), m: d.getMonth() }; ui.calFocus = el.value; render(); focusDay(el.value); }
+    if (el.dataset.ico) icoAnswer(el);
+    if (G) G.onChange(el);
     if (el.dataset.check) { setPath(el.dataset.check, !!el.checked); save(); }
     if (el.dataset.link) {
       const r = state.rule.find((x) => x.id === el.dataset.link); if (!r) return;
@@ -1049,6 +1620,7 @@
   window.addEventListener("focus", () => { if (checkDay()) render(); });
   window.addEventListener("pageshow", () => { if (checkDay()) render(); });
   window.addEventListener("afterprint", () => { if (ui.printing) { ui.printing = false; ui.printKind = "rule"; ui.day = null; render(); } });
+  if (G) root.addEventListener("keydown", (e) => G.onKey(e));
   window.addEventListener("popstate", () => { if (readHash()) { checkDay(); if (ui.tab === "diary") ui.day = null; render({ nav: true }); window.scrollTo(0, 0); } });
   // Another tab of the app saved: take its words and show them here.
   window.addEventListener("storage", (e) => {
@@ -1056,6 +1628,44 @@
     clearTimeout(saveTimer); dirty = false; loadFailed = false; unreadable = null;
     state = load(); render();
   });
+
+  /* ───────── the doorway for other scripts (see the note at the top of this file) ───────── */
+  IL.api = {
+    getState: () => JSON.parse(JSON.stringify(state)),
+    addPractice: (p) => { const r = addPractice(p); if (!r) return null; render(); return r.id; },
+    setFloor: (lines) => { const a = Array.isArray(lines) ? lines : []; commit({ floor: [0, 1, 2].map((i) => (typeof a[i] === "string" ? a[i].trim() : state.floor[i])) }); return state.floor.slice(); },
+    setSeasonField: (id) => { const f = fieldById(id); if (!f) return false; if (!(state.focus && state.focus.field === f.id)) setFocusField(f); return true; },
+    setSteward: (patch) => { const p = patch && typeof patch === "object" && !Array.isArray(patch) ? patch : {}, next = Object.assign({}, state.steward);
+      ["baptism", "patron", "stateOfLife", "call"].forEach((k) => { if (typeof p[k] === "string") next[k] = p[k]; });
+      if (Array.isArray(p.gifts)) next.gifts = [0, 1, 2].map((i) => (typeof p.gifts[i] === "string" ? p.gifts[i] : state.steward.gifts[i]));
+      commit({ steward: next }); return Object.assign({}, state.steward, { gifts: state.steward.gifts.slice() }); },
+    iconoSummary: () => { const r = icoLatest(); return r ? icono.synthesis(r) : null; },
+    makeICS: (opts) => makeICS(opts),
+    makeDayICS: (isoDate) => (G ? G.makeDayICS(isoDate) : ""),
+    removePractice: (id) => { const n = state.rule.length; state.rule = state.rule.filter((r) => r.id !== id); if (state.rule.length === n) return false; save(); render(); return true; },
+    setChurch: (patch) => { const p = patch && typeof patch === "object" && !Array.isArray(patch) ? patch : {}, next = Object.assign({}, state.church);
+      ["parish", "confession", "ahead", "beside", "behind"].forEach((k) => { if (typeof p[k] === "string") next[k] = p[k]; });
+      if (!CONFESSION.includes(next.confession)) next.confession = state.church.confession;
+      commit({ church: next }); return Object.assign({}, state.church); },
+    setMovements: (id, m) => { const f = fieldById(id), p = m && typeof m === "object" && !Array.isArray(m) ? m : {}; if (!f) return false;
+      const next = Object.assign({}, state.fields, { [f.id]: Object.assign({}, state.fields[f.id]) });
+      [["receive", "receive"], ["bless", "bless"], ["spend", "spend"], ["return", "ret"]].forEach(([from, to]) => { if (typeof p[from] === "string") next[f.id][to] = p[from]; });
+      commit({ fields: next }); return true; },
+    setDay: (patch) => { const p = patch && typeof patch === "object" && !Array.isArray(patch) ? patch : {}, next = Object.assign({}, state.day);
+      ["wake", "workStart", "workEnd", "bed"].forEach((k) => { if (isTime(p[k])) next[k] = p[k]; });
+      if (typeof p.workVaries === "boolean") next.workVaries = p.workVaries;
+      if (Number.isInteger(p.restDay) && p.restDay >= 0 && p.restDay <= 6) next.restDay = p.restDay;
+      commit({ day: next }); return JSON.parse(JSON.stringify(state.day)); },
+    setName: (name) => { commit({ prefs: Object.assign({}, state.prefs, { name: typeof name === "string" ? name : "" }) }); return state.prefs.name; },
+    addCommitment: (c) => { const o = c && typeof c === "object" ? c : {}, id = uid(), before = state.day.fixed.length;
+      commit({ day: Object.assign({}, state.day, { fixed: state.day.fixed.concat([{ id, title: o.title, start: o.start, end: o.end, date: o.date, weekday: o.weekday }]) }) });
+      return state.day.fixed.length > before && state.day.fixed.some((x) => x.id === id) ? id : null; },
+    removeCommitment: (id) => { const n = state.day.fixed.length; commit({ day: Object.assign({}, state.day, { fixed: state.day.fixed.filter((x) => x.id !== id) }) }); return state.day.fixed.length < n; },
+    finishGuide: (made) => { commit({ guide: { done: todayISO(), draft: null, made: Array.isArray(made) ? made : state.guide.made } }); return state.guide.done; },
+    batch: (fn) => { batching++; try { if (typeof fn === "function") fn(); } finally { batching--; if (!batching && drawLater) { drawLater = false; render(); } } },
+    go: (route) => { const [t, sub] = String(route == null ? "" : route).replace(/^#/, "").split("/"); if (!SCREENS[t]) return false;
+      go(t, t === "more" && SUBS[sub] ? sub : null); if (t === "diary" && sub === "examen") acts.diaryview({ dataset: { v: "examen" } }); return true; }
+  };
 
   if (!readHash()) { ui.tab = "today"; }
   render({ nav: true });
