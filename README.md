@@ -5,7 +5,7 @@ A Catholic rule of life across twelve fields of stewardship: a website, the book
 Live: https://lartedellamore.github.io/illuminated-life/
 
 > One Master entrusts one steward with twelve fields in three rings:
-> Person (Body, Mind, Soul, Heart), Household (Time, Money, Work, Home), World (Creation, Speech, Beauty and Making, Mission).
+> Person (Body, Mind, Soul, Heart), Household (Time, Finance, Work, Home), World (Creation, Speech, Beauty and Making, Mission).
 > In every field the same four movements take place: **receive, bless, spend, return.**
 
 ## What it does
