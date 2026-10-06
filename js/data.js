@@ -74,14 +74,14 @@ IL.MOVES = [
 
 IL.FIELDS = [
   { id: "body", n: "I", name: "Body", ring: "person", icon: "lily",
-    holds: "Sleep, food, movement, medical care, rest, sexuality.",
+    holds: "The body, a temple of the Holy Spirit: sleep, food, movement, medical care, rest, sexuality.",
     end: "A body lived in as a temple and spent in love: rested, fed, strong enough to serve, and received as a gift.",
     disorder: "Neglect on one side, the cult of the body on the other. Both treat the body as something other than you.",
     examine: ["Am I sleeping enough to be patient with people?", "Do I eat seated and gratefully, without punishing or numbing myself?", "Is there care I have been putting off: a doctor, a dentist, a rest?"],
     rungs: ["A fixed bedtime, with the phone charging outside the bedroom", "Meals at a table with grace said, and a daily walk outdoors", "Strength built twice a week, and overdue appointments booked", "Rest, food and movement kept ordinarily, as thanksgiving"],
     radiant: "You live in your body without war. It is neither your project nor your enemy.",
     verse: { t: "Your body is a temple of the Holy Spirit. So glorify God in your body.", r: "1 Corinthians 6:19-20" },
-    ccc: "364, 2288-2289",
+    ccc: "364, 1004, 2288-2289",
     care: "If food or exercise has ever been a place of illness for you, choose your practices here with your clinician, and never use food as penance." },
 
   { id: "mind", n: "II", name: "Mind", ring: "person", icon: "book",
@@ -221,6 +221,7 @@ IL.PRECEPTS = [
 IL.PRAYERS = [
   ["Morning offering", "Father, everything I will touch today is yours before it is mine. I receive this day from your hand. Set my loves in order. Let me spend what you have given, and bring it back to you tonight. Through Christ our Lord. Amen."],
   ["To the Holy Spirit", "Come, Holy Spirit. I cannot set my own loves in order. Pour the love of God into my heart, and make me quick to follow where you lead. Amen."],
+  ["For the temple of my body", "Holy Spirit, you dwell in this body, and it was bought at a price. Teach me to live in it as your temple: to rest it, to feed it with thanks, to keep it pure, and to spend it in love. I look for the resurrection of the body. Amen."],
   ["For the field I have been avoiding", "Master, you entrusted this to me, and I have buried it because I was afraid. You are not a hard master. Show me the first small thing, and stay with me while I do it. Amen."],
   ["In a dark season", "God beyond feeling, I do not sense you. I choose you anyway. Let that count as prayer. Amen."],
   ["At night", "Into your hands, Lord, I commend my spirit. What I finished is yours. What I did not finish is yours too. Amen."]
