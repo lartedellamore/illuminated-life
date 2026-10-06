@@ -1,6 +1,6 @@
 # The bridge: from book to app
 
-Every screen is a chapter of *Illuminated: The Image of God, Embodied* (59 pages) in working form.
+Every screen is a chapter of *Illuminated: The Image of God, Embodied* (62 pages) in working form.
 
 | In the book | In the app | In the code |
 | --- | --- | --- |
