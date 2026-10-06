@@ -1,8 +1,8 @@
 /* Illuminated Life · offline cache.
    Change the version below whenever you publish new files, so phones pick up the update. */
-const VERSION = "illuminated-life-10";
+const VERSION = "illuminated-life-11";
 // Everything the app needs to open with no network.
-const FILES = ["app.html", "css/styles.css", "js/data.js", "js/icons.js", "js/calendar-data.js", "js/liturgy.js", "js/guide.js", "js/app.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/apple-touch-icon.png", "assets/fonts/cormorant-garamond-latin-400-normal.woff2", "assets/fonts/cormorant-garamond-latin-500-normal.woff2", "assets/fonts/cormorant-garamond-latin-600-normal.woff2", "assets/fonts/cormorant-garamond-latin-400-italic.woff2", "assets/fonts/inter-latin-400-normal.woff2", "assets/fonts/inter-latin-500-normal.woff2", "assets/fonts/inter-latin-600-normal.woff2"];
+const FILES = ["app.html", "css/styles.css", "js/data.js", "js/icons.js", "js/calendar-data.js", "js/liturgy.js", "js/guide.js", "js/photos.js", "js/app.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/apple-touch-icon.png", "assets/fonts/cormorant-garamond-latin-400-normal.woff2", "assets/fonts/cormorant-garamond-latin-500-normal.woff2", "assets/fonts/cormorant-garamond-latin-600-normal.woff2", "assets/fonts/cormorant-garamond-latin-400-italic.woff2", "assets/fonts/inter-latin-400-normal.woff2", "assets/fonts/inter-latin-500-normal.woff2", "assets/fonts/inter-latin-600-normal.woff2"];
 
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => {

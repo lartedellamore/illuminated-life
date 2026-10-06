@@ -101,3 +101,7 @@ The twelve fields are colour-coded by ring: ruby for the Person, sapphire for th
 - `book/illuminated.pdf`: the book, typeset.
 - `book/illuminated.md`: the book's text as Markdown.
 - `guides/a-home-for-everything.pdf`: the setup plan for the twelve fields on a laptop and phone.
+
+## Diary photographs
+
+Each diary day can hold up to ten photographs (`js/photos.js`). They are made smaller, their location data is removed, and they are stored only in the browser's IndexedDB on that device. Nothing is uploaded.
