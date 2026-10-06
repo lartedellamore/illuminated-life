@@ -1,6 +1,6 @@
 # Illuminated Life
 
-A Catholic rule of life across twelve fields of stewardship: a website, the book *Illuminated: The Image of God, Embodied* (59 pages, PDF), and its companion app.
+A Catholic rule of life across twelve fields of stewardship: a website, the book *Illuminated: The Image of God, Embodied* (62 pages, PDF), and its companion app.
 
 Live: https://lartedellamore.github.io/illuminated-life/
 
@@ -38,7 +38,7 @@ css/site.css            the website's styles
 robots.txt, sitemap.xml for search engines
 app.html                the app's page shell
 css/styles.css          the app's design system (colours, type, components; light and dark)
-book/illuminated.pdf    the book (59 pages)
+book/illuminated.pdf    the book (62 pages)
 assets/                 cover, screenshots and the share image (og.jpg) used by the website
 assets/fonts/           Cormorant Garamond and Inter, hosted here (no Google Fonts)
 js/data.js              every word the app says: fields, laws, prayers, verses
@@ -88,3 +88,10 @@ The app is not a spiritual director, a confessor or a diagnosis.
 ## Colours
 
 The twelve fields are colour-coded by ring: ruby for the Person, sapphire for the Household, emerald for the World. Gold is kept for the centre. These are a memory aid and are not liturgical colours. The calendar uses the liturgical colours of the day, shown as small dots.
+
+## The Guide, the Icon Screen and My day
+
+- **The Guide** (`js/guide.js`) asks fixed questions and drafts a first Rule and a day plan. On this site it is not an AI. Inside a Claude artifact the same app can also draft with Claude, if the viewer allows it.
+- **The Icon Screen** (`js/icons.js`) is the five-panel iconography from *Accedite et Illuminamini*. Its items were written for this app and await a priest's review.
+- **Calendar**: the app exports `.ics` files. It cannot read or write a calendar account.
+- The picture of the model is a parish church: lamp, temple, house, field.
