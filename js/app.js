@@ -1,6 +1,8 @@
 /* Illuminated Life · the app
    Plain JavaScript, no build step, no dependencies.
    State lives in one object, saved to this browser only (localStorage).
+   Diary photographs are the one exception: they are too large, so js/photos.js keeps them in IndexedDB,
+   and the state holds only each day's ordered list of { id, caption }.
    Screens are functions that return HTML strings; one click handler reads data-act.
    Every value that comes from the user or from a backup passes through esc() on its way into HTML.
 
@@ -42,6 +44,8 @@
   const PREVIEW = window.IL_HOST === "preview"; // set only in the hosted preview, where files and printing are blocked
   const root = document.getElementById("app");
   const GUIDE = IL.guide || null; // js/guide.js: the Guide, My day, the calendar screen
+  const PHOTOS = IL.photos || null; // js/photos.js: where diary photographs are kept
+  const PHOTO_ID = /^[a-z0-9]{6,24}$/, PHOTO_MAX = 10;
 
   /* ───────── helpers ───────── */
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"'`]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));
@@ -138,7 +142,7 @@
       day: { wake: "07:00", workStart: "09:00", workEnd: "17:30", bed: "22:30", workVaries: false, restDay: 0, fixed: [], first: {} },
       // The Guide: the date it was last finished, and the answers of an interview in progress.
       guide: { done: "", draft: null, made: [] }, // made: the practices the Guide itself put in the Rule
-      prefs: { pdfVerse: true, region: "general", sundayFeasts: false, name: "", todayView: "list", icsFeasts: false }, meta: { lastBackup: "", calStart: "" }
+      prefs: { pdfVerse: true, pdfPhotos: true, region: "general", sundayFeasts: false, name: "", todayView: "list", icsFeasts: false }, meta: { lastBackup: "", calStart: "" }
     };
   }
 
@@ -218,10 +222,17 @@
 
     const jo = obj(src.journal);
     const lines = (x, n) => { const o = {}, s = Array.isArray(x) ? x : obj(x); for (let i = 0; i < n; i++) { const v = str(s[i], 1000); if (v) o[i] = v; } return o; };
+    // A day's photographs: at most ten, as { id, caption }. The pictures themselves are not here (js/photos.js).
+    // An id belongs to one day only. A caption is one short line.
+    const seenP = {}, photoList = (x) => (Array.isArray(x) ? x.slice(0, 200) : []).map((p) => {
+      const o = obj(p); if (typeof o.id !== "string" || !PHOTO_ID.test(o.id) || seenP[o.id]) return null; seenP[o.id] = true;
+      return { id: o.id, caption: str(o.caption, 600).replace(/\s+/g, " ").trim().slice(0, 120) };
+    }).filter(Boolean).slice(0, PHOTO_MAX);
     Object.keys(jo).filter(isISO).slice(-1500).forEach((k) => {
-      const e = obj(jo[k]);
+      const e = obj(jo[k]), photos = photoList(e.photos);
       const out = { g: lines(e.g, 7), p: lines(e.p, 3), service: str(e.service, 1000), serviceDone: e.serviceDone === true, light: str(e.light), word: str(e.word, 1000) };
-      if (Object.keys(out.g).length || Object.keys(out.p).length || out.service || out.serviceDone || out.light || out.word) base.journal[k] = out;
+      if (photos.length) out.photos = photos;
+      if (Object.keys(out.g).length || Object.keys(out.p).length || out.service || out.serviceDone || out.light || out.word || photos.length) base.journal[k] = out;
     });
 
     const tr = obj(src.treasury), tb = Array.isArray(tr.buckets) ? tr.buckets : [];
@@ -251,7 +262,7 @@
     base.guide.draft = GUIDE && gd.draft ? GUIDE.cleanDraft(gd.draft) : null;
     base.guide.made = (Array.isArray(gd.made) ? gd.made : []).filter((id, i, arr) => typeof id === "string" && arr.indexOf(id) === i && base.rule.some((r) => r.id === id)).slice(0, 40);
 
-    const pf = obj(src.prefs); base.prefs.pdfVerse = pf.pdfVerse !== false;
+    const pf = obj(src.prefs); base.prefs.pdfVerse = pf.pdfVerse !== false; base.prefs.pdfPhotos = pf.pdfPhotos !== false;
     base.prefs.region = pf.region === "nl" ? "nl" : "general"; base.prefs.sundayFeasts = pf.sundayFeasts === true;
     base.prefs.name = str(pf.name, 60).trim(); base.prefs.todayView = pf.todayView === "day" ? "day" : "list"; base.prefs.icsFeasts = pf.icsFeasts === true;
     const me = obj(src.meta); base.meta.lastBackup = typeof me.lastBackup === "string" && !isNaN(Date.parse(me.lastBackup)) ? new Date(Date.parse(me.lastBackup)).toISOString() : "";
@@ -259,15 +270,15 @@
     return base;
   }
 
-  let loadFailed = false, unreadable = null;
+  let loadFailed = false, unreadable = null, stateRead = false; // stateRead: saved words were found, read and normalised
   function load() {
-    let raw = null;
+    let raw = null; stateRead = false;
     try { raw = localStorage.getItem(KEY); } catch (e) { return blank(); } // storage is blocked: the app still runs
     if (!raw) return blank();
     try {
       const data = JSON.parse(raw);
       if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("shape");
-      return normalise(data);
+      const read = normalise(data); stateRead = true; return read;
     } catch (e) { loadFailed = true; unreadable = raw; return blank(); } // start fresh; nothing is written until the user acts
   }
   let state = load();
@@ -335,7 +346,8 @@
     trash: "M4.8 6.6h14.4M9.6 6.6V4.8h4.8v1.8M6.6 6.6l.9 12.6h9l.9-12.6",
     shield: "M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6Z",
     guide: "M5.2 5.5h13.6a1.7 1.7 0 0 1 1.7 1.7v7.6a1.7 1.7 0 0 1-1.7 1.7h-7.3L7.6 20v-3.5H5.2a1.7 1.7 0 0 1-1.7-1.7V7.2a1.7 1.7 0 0 1 1.7-1.7ZM8 9.6h8M8 12.6h5",
-    send: "M4.5 12h13M12.5 6.5 18 12l-5.5 5.5"
+    send: "M4.5 12h13M12.5 6.5 18 12l-5.5 5.5",
+    camera: "M5 8h2.6l1.5-2.3h5.8L16.4 8H19a1.7 1.7 0 0 1 1.7 1.7v7.6A1.7 1.7 0 0 1 19 19H5a1.7 1.7 0 0 1-1.7-1.7V9.7A1.7 1.7 0 0 1 5 8ZM12 16.4a3.1 3.1 0 1 0 0-6.2 3.1 3.1 0 0 0 0 6.2Z"
   };
   const icon = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="${n === "more" ? 2.6 : 1.5}" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n] || ICONS.spark}"/></svg>`;
   // Ring colours: every field takes the colour of its ring. Gold stays with the centre.
@@ -488,8 +500,8 @@
       <p class="sub">On this day you were made a member of Christ. Give thanks, renew your promises, and light a candle if you can.${state.steward.patron ? " " + esc(state.steward.patron) + ", pray for us." : ""}</p></div>`;
 
     if (G && !state.floorMode) h += G.todayCard();
-    const jt = jGet(d), nThanks = Object.values(jt.g || {}).filter(Boolean).length;
-    h += `<button class="pane row link-row" data-act="opendiary">${badge("pen", nThanks > 0)}<span class="rowtext"><b>Today's diary</b><span>${nThanks ? "Begun. Seven thanks, three prayers, one act of service." : "Seven thanks, three prayers, one act of service."}</span></span>${icon("chev", 18)}</button>`;
+    const jt = jGet(d), nThanks = Object.values(jt.g || {}).filter(Boolean).length, nPh = pList(d).length;
+    h += `<button class="pane row link-row" data-act="opendiary">${badge("pen", nThanks > 0)}<span class="rowtext"><b>Today's diary</b><span>${nThanks ? "Begun. Seven thanks, three prayers, one act of service." : "Seven thanks, three prayers, one act of service."}</span>${nPh ? `<span class="pline" id="today-photos">${icon("camera", 15)}${nPhotos(nPh)}</span>` : ""}</span>${icon("chev", 18)}</button>`;
     // A quiet invitation, until the Icon Screen has been taken once. Hidden in floor mode.
     if (!state.icono.results.length && !state.floorMode) { const dr = state.icono.draft, P = dr ? ICONO.panels[icoPanelOf(dr.step)] : null;
       h += `<button class="pane row link-row" id="today-icon" data-act="sub" data-s="icon">${badge("spark", false)}<span class="rowtext"><b>${dr ? "Go on with the Icon Screen" : "The Icon Screen"}</b><span>${dr ? "Your place is kept: Panel " + P.n + " of V, " + esc(P.name) + "." : "A mirror in five panels. About twenty minutes, once a year."}</span></span>${icon("chev", 18)}</button>`; }
@@ -656,7 +668,8 @@
   /* ───────── Diary: seven thanks, three prayers, one act of service ───────── */
   const diarySeg = () => `<div class="seg" role="group" aria-label="Diary or Examen">${[["diary", "Diary", "thanks, prayer, service"], ["examen", "Examen", "the evening review"]].map(([v, t, e]) => `<button data-act="diaryview" data-v="${v}" aria-pressed="${ui.diaryView === v}">${t}<em>${e}</em></button>`).join("")}</div>`;
   const jGet = (d) => state.journal[d] || {};
-  const jHas = (j) => !!(j && (Object.values(j.g || {}).some(Boolean) || Object.values(j.p || {}).some(Boolean) || j.service || j.light || j.word));
+  const jHasText = (j) => !!(j && (Object.values(j.g || {}).some(Boolean) || Object.values(j.p || {}).some(Boolean) || j.service || j.light || j.word));
+  const jHas = (j) => jHasText(j) || !!(j && Array.isArray(j.photos) && j.photos.length); // a day with only photographs is still a day
   const ROMAN7 = ["i", "ii", "iii", "iv", "v", "vi", "vii"];
   const viewDay = () => { const t = todayISO(); return ui.day && isISO(ui.day) && ui.day <= t ? ui.day : t; };
   const isEvening = () => new Date().getHours() >= 17;
@@ -689,15 +702,19 @@
         ${area(`journal.${d}.light`, j.light, "A moment, a face, a sentence. Where God was near.", "", 2, "Where I saw light today")}
         ${input(`journal.${d}.word`, j.word, v.t, "A word I am carrying")}
         <p class="note">If the line is empty, the verse of the day is offered: ${esc(v.r)}.</p></div>
+      ${PhotoCard(d, t)}
       <p class="handoff" id="handoff" ${d === t && isEvening() && jHas(j) ? "" : "hidden"}>Saved. When you are ready, <button class="link" data-act="diaryview" data-v="examen">go on to the evening Examen</button>.</p>
       <div class="pane lit pad"><span class="rub">Keep it</span><h2 class="h2">Save my diary as a PDF</h2>
         ${PREVIEW ? `<p class="sub">In the full app you can save your diary as a PDF, by day, week or month.</p>` : `<p class="sub">Choose what to include. In the window that opens, choose <b>Save as PDF</b> (on iPhone: Share, then Print, then pinch the preview open and share it).</p>
-        <div class="btnrow mt"><select class="in fix" id="print-range" aria-label="What to include" style="width:auto">${[["day", "This day"], ["week", "The last seven days"], ["month", "The last thirty days"], ["all", "Everything"]].map(([k, l]) => `<option value="${k}" ${ui.printRange === k ? "selected" : ""}>${l}</option>`).join("")}</select>
+        <div class="btnrow mt"><select class="in fix" id="print-range" data-range="1" aria-label="What to include" style="width:auto">${[["day", "This day"], ["week", "The last seven days"], ["month", "The last thirty days"], ["all", "Everything"]].map(([k, l]) => `<option value="${k}" ${ui.printRange === k ? "selected" : ""}>${l}</option>`).join("")}</select>
         <button class="gold-btn" data-act="printdiary" data-d="${esc(d)}">Save as PDF</button></div>
-        <label class="check mt"><input type="checkbox" id="pdf-verse" data-check="prefs.pdfVerse" ${state.prefs.pdfVerse ? "checked" : ""}><span>Where my word is empty, print the verse of the day</span></label>`}
+        <label class="check mt"><input type="checkbox" id="pdf-verse" data-check="prefs.pdfVerse" ${state.prefs.pdfVerse ? "checked" : ""}><span>Where my word is empty, print the verse of the day</span></label>
+        ${ph.ok === true ? `<label class="check"><input type="checkbox" id="pdf-photos" data-check="prefs.pdfPhotos" ${state.prefs.pdfPhotos ? "checked" : ""}><span>Include photographs</span></label>` : ""}`}
         <p class="note mt">Your diary stays on this device. Nothing is sent anywhere.</p></div>
+      ${jHas(j) ? (ph.delDay ? `<div class="confirm" id="day-del" role="group" aria-label="Delete this day's page"><p>Delete the page of ${esc(longDate(d))}? Its thanks, prayers and service${pList(d).length ? ", and its " + (pList(d).length === 1 ? "photograph" : nPhotos(pList(d).length)) + "," : ""} are removed from this device. This cannot be undone.</p>
+        <div class="btnrow"><button class="gold-btn" data-act="daydel2">Yes, delete it</button><button class="pill" data-act="daykeep">Keep it</button></div></div>` : `<button class="link quiet daydel" data-act="daydel1">Delete this day's page</button>`) : ""}
       ${past.length ? `<h2 class="h2 mt">Earlier days</h2><div class="pane pad">${past.map((k) => { const x = state.journal[k];
-        return `<details class="entry"><summary>${esc(longDate(k))}</summary>
+        return `<details class="entry"><summary>${esc(longDate(k))}${pMark((x.photos || []).length)}</summary>
           ${Object.values(x.g || {}).filter(Boolean).length ? `<p><span class="rub inl">Thanks</span>${Object.values(x.g).filter(Boolean).map(esc).join(" · ")}</p>` : ""}
           ${Object.values(x.p || {}).filter(Boolean).length ? `<p><span class="rub inl">Prayer</span>${Object.values(x.p).filter(Boolean).map(esc).join(" · ")}</p>` : ""}
           ${x.service ? `<p><span class="rub inl">Service</span>${esc(x.service)}${x.serviceDone ? " (done)" : ""}</p>` : ""}
@@ -706,11 +723,195 @@
     </section>`;
   }
 
+  /* ───────── Diary photographs: up to ten for each day ─────────
+     The pictures are kept by js/photos.js, outside the saved state. Here are the card, the larger view, and what
+     adding, moving and removing do. A picture is read from its store once for a screen and shown through an
+     object URL. render() notes which pictures the screen uses and gives back the URLs of the rest. */
+  const ph = {
+    ok: PHOTOS ? null : false, // null: still finding out. false: this browser window cannot keep photographs.
+    urls: {},                  // id → { rec, t, f } or { missing: true }, for the screen now shown
+    need: {}, want: [], hold: false,
+    busy: false, msg: "", open: null, opener: null, confirm: false, delDay: false, bk: null, restore: null
+  };
+  const pList = (d) => { const j = state.journal[d]; return j && Array.isArray(j.photos) ? j.photos : []; };
+  const photoIds = (s) => Object.keys(s.journal).reduce((all, k) => all.concat((s.journal[k].photos || []).map((p) => p.id)), []);
+  const nPhotos = (n) => (n === 1 ? "1 photograph" : n + " photographs");
+  const pAlt = (p, i) => p.caption || "Photograph " + (i + 1) + " of the day";
+  const pMark = (n) => (n ? `<span class="pmark">${icon("camera", 15)}<span class="vh">, </span>${n}<span class="vh"> ${n === 1 ? "photograph" : "photographs"}</span></span>` : "");
+  const printsPhotos = () => ph.ok === true && state.prefs.pdfPhotos !== false;
+  const focusOn = (el) => { if (el) { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } } };
+
+  // The address of one picture for the screen being drawn: the small one, or the full one. Empty until it has been read.
+  function pUrl(id, full) {
+    const lvl = full ? 2 : 1; if ((ph.need[id] || 0) < lvl) ph.need[id] = lvl;
+    const c = ph.urls[id];
+    if (!c) { if (!ph.want.includes(id)) ph.want.push(id); return ""; }
+    if (c.missing) return "";
+    if (full) return c.f || (c.f = URL.createObjectURL(c.rec.blob));
+    return c.t || (c.t = URL.createObjectURL(c.rec.thumb instanceof Blob ? c.rec.thumb : c.rec.blob));
+  }
+  const pMissing = (id) => !!(ph.urls[id] && ph.urls[id].missing);
+  function pEnsure(ids) {
+    const todo = ids.filter((id) => !ph.urls[id]); if (!todo.length || !PHOTOS) return Promise.resolve();
+    const take = (recs) => { todo.forEach((id, i) => { if (ph.urls[id]) return; const r = recs && recs[i]; ph.urls[id] = r && r.blob instanceof Blob ? { rec: r, t: "", f: "" } : { missing: true }; }); };
+    return PHOTOS.getMany(todo).then(take, () => take(null));
+  }
+  const pRevoke = (c, full) => { if (!c) return; if (c.f) { URL.revokeObjectURL(c.f); c.f = ""; } if (!full && c.t) { URL.revokeObjectURL(c.t); c.t = ""; } };
+  // After every draw: give back what the screen no longer shows, and read what it is still waiting for.
+  function pTidy() {
+    Object.keys(ph.urls).forEach((id) => { const lvl = ph.need[id] || 0, c = ph.urls[id];
+      if (!lvl) { pRevoke(c); delete ph.urls[id]; } else if (lvl < 2) pRevoke(c, true); });
+    if (ph.want.length) { const ids = ph.want; ph.want = []; pEnsure(ids).then(() => { if (!ph.hold) render(); }); }
+  }
+  const pForget = () => { Object.keys(ph.urls).forEach((id) => pRevoke(ph.urls[id])); ph.urls = {}; };
+
+  function PhotoCard(d, t) {
+    if (ph.ok === false) return `<p class="note center" id="photos-off">Photographs cannot be kept in this browser window.</p>`;
+    if (ph.ok !== true) return "";
+    const list = pList(d), n = list.length, full = n >= PHOTO_MAX;
+    return `<div class="pane pad photos" id="photos"><span class="rub">Remember</span><h2 class="h2">Up to ten photographs of ${d === t ? "today" : "this day"}</h2>
+        <p class="sub">What you saw ${d === t ? "today" : "that day"} that was good. They stay on this device.</p>
+        ${n ? `<ul class="pgrid" aria-label="Photographs of this day">${list.map((p, i) => { const src = pUrl(p.id, false), alt = pAlt(p, i);
+          return `<li class="ptile"><button class="pthumb" data-act="photoopen" data-id="${esc(p.id)}"><span class="vh">Open: </span>${src ? `<img src="${esc(src)}" alt="${esc(alt)}" draggable="false">` : pMissing(p.id) ? `<span class="pgone">${icon("camera", 20)}<span><span class="vh">${esc(alt)}. </span>Not on this device</span></span>` : `<span class="pwait"><span class="vh">${esc(alt)}</span></span>`}</button>${p.caption ? `<span class="pcap" aria-hidden="true">${esc(p.caption)}</span>` : ""}</li>`; }).join("")}</ul>` : ""}
+        <div class="btnrow pbar"><button class="gold-btn" data-act="photoadd" ${full || ph.busy ? "disabled" : ""}>${ph.busy ? "One moment…" : full ? "Ten is the limit for a day" : "Add photographs"}</button><span class="pcount" id="photo-count">${n} of ${PHOTO_MAX}</span></div>
+        <input type="file" id="photo-file" accept="image/*" multiple hidden tabindex="-1" aria-label="Choose photographs">
+        <p class="pmsg" id="photo-msg" role="status">${esc(ph.msg)}</p>
+        <p class="note">${n ? "Tap a photograph to see it larger, give it a caption, move it or remove it. " : ""}Photographs are made smaller and their location data is removed before they are saved.</p></div>`;
+  }
+  // The larger view, in a sheet over the Diary: the picture, its caption, the one before and the one after.
+  function PhotoSheet() {
+    if (!ph.open) return "";
+    const list = ui.tab === "diary" && ui.diaryView === "diary" && ph.ok === true ? pList(viewDay()) : [], i = list.findIndex((p) => p.id === ph.open);
+    if (i < 0) { ph.open = null; ph.opener = null; ph.confirm = false; return ""; }
+    const p = list[i], src = pUrl(p.id, true), n = list.length, off = (x) => (x ? ` aria-disabled="true"` : "");
+    return `<div class="sheet-back" data-act="photoclose" data-bg="1"></div>
+      <div class="sheet pview" id="photoview" role="dialog" aria-modal="true" aria-labelledby="pv-title" tabindex="-1">
+        <div class="sheet-top"><h2 class="rub" id="pv-title" aria-live="polite">Photograph ${i + 1} of ${n}</h2><button class="pill" data-act="photoclose">Close</button></div>
+        <div class="pv-frame">${src ? `<img src="${esc(src)}" alt="${esc(pAlt(p, i))}" draggable="false">` : `<p class="note">${pMissing(p.id) ? "This photograph is not on this device." : "Opening…"}</p>`}</div>
+        <label class="fieldset"><span class="lab">Caption</span><input class="in" id="pv-cap" data-pcap="${esc(p.id)}" value="${esc(p.caption)}" maxlength="120" placeholder="A few words, if you like" autocomplete="off"></label>
+        <div class="btnrow pv-nav"><button class="pill" data-act="photostep" data-n="-1"${off(i === 0)}>Previous</button><button class="pill" data-act="photostep" data-n="1"${off(i === n - 1)}>Next</button></div>
+        ${ph.confirm ? `<div class="confirm" role="group" aria-label="Remove this photograph"><p>Remove this photograph? It is deleted from this device.</p>
+          <div class="btnrow"><button class="gold-btn" data-act="photoremove2">Yes, remove it</button><button class="pill" data-act="photokeep">Keep it</button></div></div>`
+          : `<div class="btnrow pv-acts"><button class="pill" data-act="photomove" data-n="-1"${off(i === 0)}>Move earlier</button><button class="pill" data-act="photomove" data-n="1"${off(i === n - 1)}>Move later</button><button class="pill pv-rm" data-act="photoremove">Remove</button></div>`}
+      </div>`;
+  }
+  // Draw again with the larger view open, and keep the focus inside it.
+  function photoShow(sel) {
+    render(); const v = document.getElementById("photoview"); if (!v) return;
+    const el = sel ? v.querySelector(sel) : null;
+    if (el) focusOn(el); else if (!v.contains(document.activeElement)) focusOn(v);
+  }
+  function photoClose() {
+    if (!ph.open) return;
+    const back = ph.opener; ph.open = null; ph.opener = null; ph.confirm = false; render();
+    let el = null; try { el = back && root.querySelector(back.sel); } catch (e) { /* the opener is gone */ }
+    focusOn(el || root.querySelector('[data-act="photoadd"]'));
+  }
+  // Escape closes; Tab stays inside; the arrow keys go to the one before and the one after.
+  function photoKey(e) {
+    const v = document.getElementById("photoview"); if (!v) return;
+    if (e.key === "Escape") { e.preventDefault(); if (ph.confirm) acts.photokeep(); else photoClose(); return; }
+    if (e.key === "Tab") {
+      const f = v.querySelectorAll("button, input"), first = f[0], last = f[f.length - 1], a = document.activeElement;
+      if (e.shiftKey && (a === first || a === v)) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+      else if (!v.contains(a)) { e.preventDefault(); first.focus(); }
+      return;
+    }
+    if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !(e.target && e.target.tagName === "INPUT") && !e.altKey && !e.ctrlKey && !e.metaKey) { e.preventDefault(); acts.photostep({ dataset: { n: e.key === "ArrowLeft" ? "-1" : "1" } }); }
+  }
+  document.addEventListener("keydown", (e) => { if (ph.open) photoKey(e); });
+
+  // Takes the files in order until the day is full. Each is made smaller first. They are saved together or not at all.
+  async function addPhotos(files, d) {
+    if (!PHOTOS || ph.ok !== true || ph.busy || !files.length || !isISO(d)) return;
+    const room = PHOTO_MAX - pList(d).length; if (room <= 0) return;
+    ph.busy = true; ph.msg = files.length === 1 ? "Making the photograph smaller…" : "Making the photographs smaller…"; render();
+    const made = []; let left = 0, unread = 0, other = 0;
+    for (let i = 0; i < files.length; i++) {
+      if (made.length >= room) { left = files.length - i; break; }
+      if (!PHOTOS.looksLikeImage(files[i])) { other++; continue; }
+      try { const r = await PHOTOS.process(files[i]); made.push({ id: PHOTOS.newId(), day: d, blob: r.blob, thumb: r.thumb, w: r.w, h: r.h, type: "image/jpeg", created: Date.now() }); }
+      catch (e) { unread++; }
+    }
+    const say = []; let kept = [];
+    if (made.length) {
+      let stored = true;
+      try { await PHOTOS.putAll(made); }
+      catch (e) { stored = false; say.push(PHOTOS.isQuota(e) ? "There is no room left in this browser for more photographs. Nothing was added." : "The photographs could not be saved in this browser. Nothing was added."); }
+      if (stored) {
+        // The words are written at once, so that the list and the pictures never disagree for long.
+        const j = state.journal[d] || (state.journal[d] = {}), cur = Array.isArray(j.photos) ? j.photos : [];
+        kept = made.slice(0, Math.max(0, PHOTO_MAX - cur.length)); // another window may have added some meanwhile
+        const extra = made.slice(kept.length); left += extra.length;
+        if (kept.length) { j.photos = cur.concat(kept.map((m) => ({ id: m.id, caption: "" }))); dirty = true; writeNow(); }
+        if (kept.length && !storageOK) { // the list could not be written: take the pictures back out
+          if (cur.length) j.photos = cur; else delete j.photos;
+          PHOTOS.remove(made.map((m) => m.id)).catch(() => {}); kept = [];
+          say.push("Could not save on this device. Nothing was added.");
+        } else {
+          if (extra.length) PHOTOS.remove(extra.map((m) => m.id)).catch(() => {});
+          kept.forEach((m) => { if (!ph.urls[m.id]) ph.urls[m.id] = { rec: m, t: "", f: "" }; });
+          if (kept.length) say.push(nPhotos(kept.length) + " added.");
+        }
+      }
+    }
+    if (left) say.push((left === 1 ? "1 was" : left + " were") + " left out. Ten is the limit for a day.");
+    if (unread) say.push(unread === 1 ? "This photograph could not be read. On an iPhone, choose it from the library and it is converted for you." : unread + " photographs could not be read. On an iPhone, choose them from the library and they are converted for you.");
+    if (other) say.push(other === 1 ? "1 file is not a photograph and was left out." : other + " files are not photographs and were left out.");
+    ph.busy = false; ph.msg = say.join(" "); render();
+    // Said again a moment later into the line that is already on the page, so that a screen reader speaks it.
+    const line = document.getElementById("photo-msg"), words = ph.msg;
+    if (line && words) { line.textContent = ""; setTimeout(() => { const l = document.getElementById("photo-msg"); if (l && ph.msg === words) l.textContent = words; }, 80); }
+  }
+  function removePhoto() {
+    const d = viewDay(), j = state.journal[d], l = j && Array.isArray(j.photos) ? j.photos : [], i = l.findIndex((p) => p.id === ph.open);
+    if (i < 0) return photoClose();
+    const id = l[i].id; l.splice(i, 1); if (!l.length) delete j.photos;
+    dirty = true; writeNow();
+    if (storageOK && PHOTOS) PHOTOS.remove([id]).catch(() => {}); // the picture goes only once the list is safely written
+    ph.confirm = false; ph.msg = "";
+    if (l.length) { ph.open = l[Math.min(i, l.length - 1)].id; photoShow(); focusOn(document.getElementById("photoview")); } else photoClose();
+    flash("Photograph removed");
+  }
+  // On opening the app: pictures that no day names any more are removed. Only when the saved words were read
+  // without trouble. A picture added in the last few minutes is left alone, in case another window is still writing its list.
+  function sweepPhotos() {
+    if (!PHOTOS || ph.ok !== true || !stateRead || loadFailed) return Promise.resolve(0);
+    return PHOTOS.list().then((rows) => {
+      if (!stateRead || loadFailed) return 0;
+      const used = new Set(photoIds(state)), now = Date.now();
+      const fresh = (r) => typeof r.created === "number" && r.created <= now + 60000 && now - r.created < 300000;
+      const gone = rows.filter((r) => !used.has(r.id) && !fresh(r)).map((r) => r.id);
+      return gone.length ? PHOTOS.remove(gone).then(() => gone.length) : 0;
+    }).catch(() => 0);
+  }
+  const sizeWords = (bytes) => (bytes < 1048576 ? "Less than 1 MB" : "About " + Math.round(bytes / 1048576) + " MB");
+  // One file: the words, and every photograph as text inside it.
+  async function backupWithPhotos() {
+    if (!PHOTOS || !ph.bk || ph.bk.busy || !canSave()) return;
+    ph.bk.busy = true; render();
+    try {
+      const copy = JSON.parse(JSON.stringify(state)); copy.meta.lastBackup = new Date().toISOString();
+      const parts = [JSON.stringify(copy).slice(0, -1) + ',"photographs":{']; let n = 0;
+      for (const id of photoIds(state)) {
+        const rec = await PHOTOS.get(id); if (!rec || !(rec.blob instanceof Blob)) continue;
+        parts.push(new Blob([(n ? "," : "") + JSON.stringify(id) + ":" + JSON.stringify(await PHOTOS.toDataURL(rec.blob))])); n++;
+      }
+      parts.push("}}");
+      const ok = await saveFile("illuminated-life-backup-with-photographs-" + todayISO() + ".json", new Blob(parts, { type: "application/json" }), "application/json");
+      ph.bk = null; if (ok) markBackup(); render(); if (ok) flash("Backup saved, with " + nPhotos(n));
+    } catch (e) { ph.bk = null; render(); flash("The backup could not be made. Nothing was changed."); }
+  }
+
   function DiaryBook() {
     const d = viewDay(), span = { day: 0, week: 6, month: 29 }[ui.printRange];
     const from = span == null ? "0000" : L.iso(L.shift(fromISO(d), -span));
-    const days = Object.keys(state.journal).filter((k) => isISO(k) && jHas(state.journal[k]) && (ui.printRange === "all" || (k >= from && k <= d))).sort();
+    const withPh = printsPhotos(), days = Object.keys(state.journal).filter((k) => isISO(k) && (withPh ? jHas : jHasText)(state.journal[k]) && (ui.printRange === "all" || (k >= from && k <= d))).sort();
     const list = (o) => Object.values(o || {}).filter(Boolean);
+    // The day's photographs, after its words: two to a row, each with its caption beneath.
+    const pics = (k) => { if (!withPh) return ""; const figs = pList(k).map((p, i) => { const src = pUrl(p.id, true); return src ? `<figure class="bphoto"><img src="${esc(src)}" alt="${esc(pAlt(p, i))}">${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ""}</figure>` : ""; }).join("");
+      return figs ? `<div class="bphotos">${figs}</div>` : ""; };
     return `<div class="bp bcover"><p>A DIARY OF GRATITUDE</p><h1>Illuminated Life</h1><p><i>Receive, bless, spend, return.</i></p>
         <p>${days.length ? esc(days.length === 1 ? longDate(days[0]) : pretty(fromISO(days[0])) + " to " + longDate(days[days.length - 1])) : ""}</p></div>
       <div class="bp">${days.length ? days.map((k) => { const x = state.journal[k], vv = verseFor(fromISO(k));
@@ -719,7 +920,7 @@
           ${list(x.p).length ? `<h3>I am praying for</h3><ul>${list(x.p).map((v) => `<li>${esc(v)}</li>`).join("")}</ul>` : ""}
           ${x.service ? `<h3>An act of service</h3><p>${esc(x.service)}${x.serviceDone ? " (done)" : ""}</p>` : ""}
           ${x.light ? `<h3>Where I saw light</h3><p>${esc(x.light)}</p>` : ""}
-          ${x.word ? `<h3>A word I am carrying</h3><p><i>${esc(x.word)}</i></p>` : state.prefs.pdfVerse ? `<h3>The verse of the day</h3><p><i>${esc(vv.t)}</i> (${esc(vv.r)})</p>` : ""}</div>`; }).join("") : "<p>No diary pages in this range yet.</p>"}</div>`;
+          ${x.word ? `<h3>A word I am carrying</h3><p><i>${esc(x.word)}</i></p>` : state.prefs.pdfVerse ? `<h3>The verse of the day</h3><p><i>${esc(vv.t)}</i> (${esc(vv.r)})</p>` : ""}</div>${pics(k)}`; }).join("") : "<p>No diary pages in this range yet.</p>"}</div>`;
   }
 
   /* ───────── More ───────── */
@@ -937,16 +1138,24 @@
   }
 
   function Backup() {
-    const lb = state.meta.lastBackup ? new Date(state.meta.lastBackup) : null;
+    const lb = state.meta.lastBackup ? new Date(state.meta.lastBackup) : null, np = photoIds(state).length, R = ph.restore;
     return `<h1 class="h1">Keep my words safe</h1><p class="lede">Everything you write lives only in this browser, on this device. Nothing is sent anywhere.</p>
       <div class="pane pad"><h2 class="rub">Back up</h2><p class="sub">Clearing your browser data erases the app's memory. Keep a copy.</p>
         <div class="btnrow mt">${canSave() ? `<button class="gold-btn" data-act="download">Save a backup file</button>` : ""}<button class="pill gold" data-act="copybackup">Copy my backup as text</button></div>
-        <p class="note mt" id="last-backup">${lb ? "Last backup: " + esc(fmt(lb, { day: "numeric", month: "long", year: "numeric" })) : "Never backed up"}</p>
-        <textarea class="in mt" id="backup-out" rows="3" readonly hidden aria-label="Backup text"></textarea></div>
+        <p class="note gap" id="backup-nophotos">Photographs are not in this file.</p>
+        <p class="note" id="last-backup">${lb ? "Last backup: " + esc(fmt(lb, { day: "numeric", month: "long", year: "numeric" })) : "Never backed up"}</p>
+        <textarea class="in mt" id="backup-out" rows="3" readonly hidden aria-label="Backup text"></textarea>
+        ${np && ph.ok === true && canSave() ? `<div class="bkphotos"><h3 class="rub">With photographs</h3><p class="sub">One larger file: your words, and your ${np === 1 ? "photograph" : nPhotos(np)} with them.</p>
+          ${ph.bk ? `<div class="confirm mt" id="bk-confirm" role="group" aria-label="Back up with photographs"><p>${esc(sizeWords(ph.bk.bytes))}, with ${esc(nPhotos(ph.bk.n))}. Save it where there is room. It can take a moment.</p>
+            <div class="btnrow"><button class="gold-btn" data-act="bkphotos2" ${ph.bk.busy ? "disabled" : ""}>${ph.bk.busy ? "One moment…" : "Save the file"}</button><button class="pill" data-act="bkphotosno">Not now</button></div></div>`
+            : `<div class="btnrow mt"><button class="pill gold" data-act="bkphotos1">Back up with photographs</button></div>`}</div>` : ""}</div>
       <div class="pane pad"><h2 class="rub">Restore</h2><p class="sub">Paste a backup here, or choose a backup file. This replaces what is on this device.</p>
-        <textarea class="in mt" id="backup-in" rows="3" placeholder="Paste your backup text" aria-label="Paste a backup" autocomplete="off" spellcheck="false"></textarea>
-        <div class="btnrow mt"><button class="pill gold" data-act="importpaste">Restore from this text</button>${PREVIEW ? "" : `<input type="file" id="backup-file" accept="application/json,.json" aria-label="Choose a backup file">`}</div></div>
-      <div class="pane pad"><h2 class="rub">Erase</h2><p class="sub">Remove everything this app has stored on this device.</p>
+        ${R ? `<div class="confirm mt" id="restore-confirm" role="group" aria-label="Restore this backup"><p>${esc(restoreWords(R))}</p>
+          <div class="btnrow"><button class="gold-btn" data-act="restoreyes" ${R.busy ? "disabled" : ""}>${R.busy ? "One moment…" : "Yes, restore it"}</button><button class="pill" data-act="restoreno">Keep what is here</button></div></div>`
+          : `<textarea class="in mt" id="backup-in" rows="3" placeholder="Paste your backup text" aria-label="Paste a backup" autocomplete="off" spellcheck="false"></textarea>
+        <div class="btnrow mt"><button class="pill gold" data-act="importpaste">Restore from this text</button>${PREVIEW ? "" : `<input type="file" id="backup-file" accept="application/json,.json" aria-label="Choose a backup file">`}</div>
+        ${ph.ok === true ? `<p class="note mt">A file with photographs brings them back too. A file without them leaves the photographs on this device with their days.</p>` : ""}`}</div>
+      <div class="pane pad"><h2 class="rub">Erase</h2><p class="sub">Remove everything this app has stored on this device${ph.ok === true ? ", photographs too" : ""}.</p>
         <div class="btnrow mt"><button class="pill" data-act="erase1">Erase everything</button><button class="pill" id="erase2" data-act="erase2" hidden>Yes, erase it all</button></div></div>`;
   }
 
@@ -955,6 +1164,7 @@
       <p class="lede">Self-knowledge in the presence of God, turned into times and places for love.</p>
       <p>Illuminated Life is the companion to the book <i>Illuminated: The Image of God, Embodied</i>. Every screen is a chapter of that book in working form. Read the theology first. Without it, this is only a task list with a candle on it.</p>
       <h2 class="h2 mt">What it promises</h2><ul class="plain"><li>It lights, and never scores. Dignity is not a metric.</li><li>It asks about one field. It adds nothing new in the other eleven. Their ordinary duties still hold.</li><li>It lets you begin again without penalty.</li><li>It sends you out of itself: to your parish, your confessor, your friends and the poor.</li><li>It keeps your words on your own device.</li></ul>
+      <h2 class="h2 mt">Your photographs</h2><p id="about-photos">Diary photographs are stored only in this browser on this device. They are not uploaded anywhere. If you clear this browser's data, they are gone, so keep a backup with photographs if they matter to you.</p>
       <h2 class="h2 mt">The Guide</h2><p>The Guide on this site follows fixed questions and is not an AI. Inside Claude, the same app can also draft with Claude if you allow it.</p><p>This app cannot see or change your Apple or Google calendar. It can hand your Rule to your calendar as a file.</p>
       <h2 class="h2 mt">What it must never become</h2><p>It is not a spiritual director, a confessor or a diagnosis. It cannot absolve, and it cannot discern a vocation. If you carry trauma, depression, addiction or disordered eating, please work with a qualified professional, and let this accompany that work.</p>
       <p>If the app ever feels like a judge and not a trellis, switch on floor mode, or close it for a season. The anchors are enough.</p>
@@ -1000,14 +1210,17 @@
     const o = opts || {}, keep = focusKey(document.activeElement), y = window.scrollY;
     useCalendar();
     const today = litDay(todayISO()), tl = L.line(today);
+    ph.need = {}; ph.want = [];
     const screen = (SCREENS[ui.tab] || Today)();
-    root.innerHTML = `<header class="top">${PREVIEW ? `<span class="mark">Illuminated Life</span>` : `<a class="mark" href="index.html" title="About the book and the app">Illuminated Life</a>`}<button class="season-chip" data-act="sub" data-s="year" aria-label="Today: ${esc(L.lineText(today))}. Open the calendar"><span class="sc-text"><b>${bead(today.colour)}${esc(tl.title)}</b>${tl.sub ? `<span>${esc(tl.sub)}</span>` : ""}</span></button></header>
-      <main class="body ${o.nav ? "rise" : ""}" id="main">${screen}</main>
+    const pv = PhotoSheet(), still = pv ? " inert" : ""; // while a photograph is open, the page behind it is at rest
+    root.innerHTML = `<header class="top"${still}>${PREVIEW ? `<span class="mark">Illuminated Life</span>` : `<a class="mark" href="index.html" title="About the book and the app">Illuminated Life</a>`}<button class="season-chip" data-act="sub" data-s="year" aria-label="Today: ${esc(L.lineText(today))}. Open the calendar"><span class="sc-text"><b>${bead(today.colour)}${esc(tl.title)}</b>${tl.sub ? `<span>${esc(tl.sub)}</span>` : ""}</span></button></header>
+      <main class="body ${o.nav ? "rise" : ""}" id="main"${still}>${screen}</main>
       <div class="toast" id="toast" role="status" ${ui.toast ? "" : "hidden"}>${esc(ui.toast || "")}</div>
       ${ui.updated && !ui.later.update ? `<div class="update" id="update" role="status"><span>Updated.</span><button class="link" data-act="reload">Reload</button><button class="link dim" data-act="later" data-k="update">Later</button></div>` : ""}
-      <nav class="tabbar" aria-label="Sections">${NAV.map(([id, label, ic]) => `<button data-act="tab" data-t="${id}" ${ui.tab === id ? 'aria-current="page"' : ""}>${icon(ic, 22)}<span>${label}</span></button>`).join("")}</nav>
-      ${ui.tab === "more" && ui.sub === "year" ? DaySheet() : ""}
+      <nav class="tabbar" aria-label="Sections"${still}>${NAV.map(([id, label, ic]) => `<button data-act="tab" data-t="${id}" ${ui.tab === id ? 'aria-current="page"' : ""}>${icon(ic, 22)}<span>${label}</span></button>`).join("")}</nav>
+      ${ui.tab === "more" && ui.sub === "year" ? DaySheet() : ""}${pv}
       <div class="book" aria-hidden="true">${Book()}</div>`;
+    pTidy();
     if (keep) {
       let el = null; try { el = root.querySelector(keep.sel); } catch (e) { /* the control is gone */ }
       if (el) {
@@ -1051,6 +1264,8 @@
   function go(tab, sub, opts) {
     checkDay();
     ui.tab = SCREENS[tab] ? tab : "today"; ui.sub = sub || null; ui.confirmFocus = null; ui.editRule = null; ui.calDay = null; ui.ico.view = null; ui.ico.del = false;
+    ph.open = null; ph.opener = null; ph.confirm = false; ph.delDay = false; ph.msg = ""; ph.bk = null; if (!(ph.restore && ph.restore.busy)) ph.restore = null;
+    if (ui.printing && ui.printKind === "diary") { ui.printing = false; ui.printKind = "rule"; } // some phones never say that printing is over; do not keep the printed pictures in hand
     if (ui.tab === "diary") { ui.day = null; ui.diaryView = "diary"; } // the Diary tab always opens on today's page
     if (G) G.onGo(ui.tab, ui.sub);
     render({ nav: true }); window.scrollTo(0, 0); pushRoute();
@@ -1090,12 +1305,13 @@
     return out;
   }
   // Saves one file. Resolves true when it was saved, false when it was not. It never throws.
+  // text is a string, or a Blob (the backup with photographs is put together as one, to spare memory).
   function saveFile(name, text, mime) {
     if (!PREVIEW) { try { download(name, text, mime); return Promise.resolve(true); } catch (e) { flash("Not saved"); return Promise.resolve(false); } }
     if (!caps.downloads) return Promise.resolve(false);
     const ics = /\.ics$/i.test(name);
     let job;
-    try { job = Promise.resolve(caps.downloads.save(ics ? { filename: name.replace(/\.ics$/i, ".zip"), data: zipOne(name, text) } : { filename: name, data: text })); } catch (e) { job = Promise.reject(e); }
+    try { job = Promise.resolve(text instanceof Blob ? text.text() : text).then((body) => caps.downloads.save(ics ? { filename: name.replace(/\.ics$/i, ".zip"), data: zipOne(name, body) } : { filename: name, data: body })); } catch (e) { job = Promise.reject(e); }
     return job.then(() => true, (e) => {
       const code = e && e.code;
       if (["unavailable", "not_granted", "capability_disabled", "capability_removed"].includes(code)) { caps.downloads = null; render(); } // saving is not possible in this view
@@ -1214,11 +1430,71 @@
     const ok = data && typeof data === "object" && !Array.isArray(data) && ["fields", "rule", "journal", "diary"].some((k) => data[k] && typeof data[k] === "object");
     if (!ok) return flash("That is not a backup from this app. Nothing was changed.");
     let next; try { next = normalise(data); JSON.stringify(next); } catch (e) { return flash("That backup could not be read. Nothing was changed."); }
+    const named = photoIds(next), mine = photoIds(state);
+    if (!PHOTOS || ph.ok !== true || (!named.length && !mine.length)) { if (adopt(next)) { go("today"); flash("Restored"); } return; }
+    // Photographs are involved, in the file or on this device: say what will happen, and wait for a yes.
+    const pics = data.photographs && typeof data.photographs === "object" && !Array.isArray(data.photographs) ? data.photographs : {}, files = {};
+    named.forEach((id) => { if (Object.prototype.hasOwnProperty.call(pics, id) && typeof pics[id] === "string") files[id] = pics[id]; });
+    PHOTOS.list().then((rows) => new Set(rows.map((r) => r.id)), () => new Set()).then((here) => {
+      ph.restore = Object.assign({ next, files, here, busy: false, inFile: Object.keys(files).length }, restorePlan(next, (id) => files[id] != null || here.has(id), here));
+      render(); const y = root.querySelector('[data-act="restoreyes"]'); focusOn(y); if (y) y.scrollIntoView({ block: "nearest" });
+    });
+  }
+  // Puts a checked and normalised state in place of the present one. False if it could not be written; then nothing has changed.
+  function adopt(next) {
     clearTimeout(saveTimer); dirty = false; unreadable = null;
     try { localStorage.setItem(KEY, JSON.stringify(next)); storageOK = true; }
-    catch (e) { return flash("Could not save on this device. Nothing was changed."); }
-    state = next; ui.open = null; ui.day = null; ui.mem = {}; icoReset();
-    go("today"); flash("Restored");
+    catch (e) { flash("Could not save on this device. Nothing was changed."); return false; }
+    state = next; stateRead = true; loadFailed = false; ui.open = null; ui.day = null; ui.mem = {}; icoReset(); return true;
+  }
+  // What a restore does with photographs. has(id): a picture for this id will be there, from the file or from this device.
+  //   A photograph the backup names is kept if its picture will be there.
+  //   A photograph on this device stays with its day if the backup has that day, and there is room.
+  //   A photograph on this device whose day is not in the backup is removed.
+  function restorePlan(next, has, here) {
+    const lists = {}, used = {}; let lost = 0, stay = 0, gone = 0;
+    Object.keys(next.journal).forEach((k) => { lists[k] = (next.journal[k].photos || []).filter((p) => { if (has(p.id)) { used[p.id] = true; return true; } lost++; return false; }); });
+    Object.keys(state.journal).forEach((k) => { (state.journal[k].photos || []).forEach((p) => {
+      if (!here.has(p.id)) return;
+      if (used[p.id]) { stay++; return; }
+      if (lists[k] && lists[k].length < PHOTO_MAX) { lists[k].push({ id: p.id, caption: p.caption }); used[p.id] = true; stay++; } else gone++;
+    }); });
+    return { lists, lost, stay, gone };
+  }
+  function restoreWords(R) {
+    const say = ["This replaces the words on this device with the backup."];
+    say.push(R.inFile ? "The file holds " + nPhotos(R.inFile) + ". " + (R.inFile === 1 ? "It is put back with its day." : "They are put back with their days.") : "Photographs are not in this file.");
+    if (R.stay) say.push(nPhotos(R.stay) + " on this device " + (R.stay === 1 ? "stays with its day." : "stay with their days."));
+    if (R.gone) say.push(nPhotos(R.gone) + " on this device " + (R.gone === 1 ? "belongs to a day that is not in the backup, and will be removed." : "belong to days that are not in the backup, and will be removed."));
+    if (R.lost) say.push(nPhotos(R.lost) + " named in the backup " + (R.lost === 1 ? "is" : "are") + " not in the file and not on this device, and will be left out.");
+    return say.join(" ");
+  }
+  // Every photograph in the file is checked, opened as a picture and written out afresh before anything is stored.
+  // The pictures go in together, then the words. If either cannot be written, nothing has changed.
+  async function restoreWithPhotos() {
+    const R = ph.restore; if (!R || R.busy || !PHOTOS) return;
+    R.busy = true; render();
+    const recs = [], dayOf = {}; let bad = 0;
+    Object.keys(R.next.journal).forEach((k) => (R.next.journal[k].photos || []).forEach((p) => { dayOf[p.id] = k; }));
+    for (const id of Object.keys(R.files)) {
+      try { const made = await PHOTOS.process(PHOTOS.fromDataURL(R.files[id]), { keep: true }); recs.push({ id, day: dayOf[id], blob: made.blob, thumb: made.thumb, w: made.w, h: made.h, type: "image/jpeg", created: Date.now() }); }
+      catch (e) { bad++; }
+      R.files[id] = null;
+    }
+    let here = R.here; try { here = new Set((await PHOTOS.list()).map((r) => r.id)); } catch (e) { /* use what was seen before */ }
+    const read = {}; recs.forEach((r) => { read[r.id] = true; });
+    const plan = restorePlan(R.next, (id) => read[id] || here.has(id), here);
+    let next = JSON.parse(JSON.stringify(R.next));
+    Object.keys(next.journal).forEach((k) => { if (plan.lists[k] && plan.lists[k].length) next.journal[k].photos = plan.lists[k]; else delete next.journal[k].photos; });
+    next = normalise(next);
+    const done = (msg) => { ph.restore = null; render(); if (msg) flash(msg); };
+    try { await PHOTOS.putAll(recs); }
+    catch (e) { return done(PHOTOS.isQuota(e) ? "There is no room left in this browser for the photographs. Nothing was changed." : "The photographs could not be saved in this browser. Nothing was changed."); }
+    if (!adopt(next)) { PHOTOS.remove(recs.map((r) => r.id).filter((id) => !here.has(id))).catch(() => {}); return done(""); }
+    const keep = new Set(photoIds(next)), drop = Array.from(here).concat(recs.map((r) => r.id)).filter((id, i, all) => !keep.has(id) && all.indexOf(id) === i);
+    if (drop.length) PHOTOS.remove(drop).catch(() => {});
+    pForget(); ph.restore = null; go("today");
+    flash("Restored" + (recs.length ? ", with " + nPhotos(recs.length) : "") + (bad ? ". " + nPhotos(bad) + " could not be read" : ""));
   }
   function markBackup() { state.meta.lastBackup = new Date().toISOString(); save(); const el = document.getElementById("last-backup"); if (el) el.textContent = "Last backup: " + fmt(new Date(), { day: "numeric", month: "long", year: "numeric" }); }
   function setFocusField(f) { state.focus = { field: f.id, since: todayISO() }; ui.confirmFocus = null; delete ui.later.season; save(); render(); flash(f.name + " is your field for this season"); }
@@ -1236,6 +1512,7 @@
   }
   // Arrow keys walk the month grid; Page Up and Page Down change the month; Escape closes the day.
   root.addEventListener("keydown", (e) => {
+    if (ph.open) return; // the larger view of a photograph has its own keys
     if (ui.calDay) {
       if (e.key === "Escape") { e.preventDefault(); closeSheet(); return; }
       if (e.key === "Tab") { // keep the focus inside the open sheet
@@ -1552,12 +1829,42 @@
     todayview: (el) => { state.prefs.todayView = el.dataset.v === "day" ? "day" : "list"; save(); render(); },
     print: () => { ui.printKind = "rule"; render(); setTimeout(() => window.print(), 60); },
     icoprint: () => { ui.printKind = "icon"; ui.printing = true; writeNow(); render(); setTimeout(() => window.print(), 60); },
-    printdiary: (el) => { const sel = document.getElementById("print-range"); ui.printRange = sel && ["day", "week", "month", "all"].includes(sel.value) ? sel.value : "month"; ui.day = isISO(el.dataset.d) ? el.dataset.d : null; ui.printKind = "diary"; ui.printing = true; writeNow(); render(); setTimeout(() => window.print(), 60); },
+    printdiary: (el) => { const sel = document.getElementById("print-range"); ui.printRange = sel && ["day", "week", "month", "all"].includes(sel.value) ? sel.value : "month"; ui.day = isISO(el.dataset.d) ? el.dataset.d : null; ui.printKind = "diary"; ui.printing = true; writeNow();
+      // With photographs: read them, draw the pages, and wait until every picture is ready before the print window opens.
+      ph.hold = true; render();
+      const pics = Object.keys(ph.need).filter((id) => ph.need[id] === 2);
+      if (!pics.length) { ph.hold = false; setTimeout(() => window.print(), 60); return; }
+      flash("Getting the photographs ready");
+      pEnsure(pics).then(() => { render();
+        return Promise.all(Array.from(root.querySelectorAll(".book img")).map((im) => (im.decode ? im.decode().catch(() => {}) : new Promise((res) => { if (im.complete) res(); else im.onload = im.onerror = res; })))); })
+        .then(() => { ph.hold = false; if (ui.printing && ui.printKind === "diary") window.print(); }, () => { ph.hold = false; }); },
+    photoadd: () => { const f = document.getElementById("photo-file"); if (f && !ph.busy) { f.value = ""; f.click(); } },
+    photoopen: (el) => { if (!pList(viewDay()).some((p) => p.id === el.dataset.id)) return; ph.open = el.dataset.id; ph.opener = focusKey(el); ph.confirm = false; render(); focusOn(document.getElementById("photoview")); },
+    photoclose: () => photoClose(),
+    photostep: (el) => { const l = pList(viewDay()), i = l.findIndex((p) => p.id === ph.open), n = i + (Number(el.dataset.n) === -1 ? -1 : 1); if (i < 0 || n < 0 || n >= l.length) return; ph.open = l[n].id; ph.confirm = false; photoShow(); },
+    photomove: (el) => { const l = pList(viewDay()), i = l.findIndex((p) => p.id === ph.open), n = i + (Number(el.dataset.n) === -1 ? -1 : 1); if (i < 0 || n < 0 || n >= l.length) return;
+      l.splice(n, 0, l.splice(i, 1)[0]); save(); photoShow(); flash("Now photograph " + (n + 1) + " of " + l.length); },
+    photoremove: () => { ph.confirm = true; photoShow('[data-act="photoremove2"]'); },
+    photokeep: () => { ph.confirm = false; photoShow('[data-act="photoremove"]'); },
+    photoremove2: () => removePhoto(),
+    daydel1: () => { ph.delDay = true; render(); const y = root.querySelector('[data-act="daydel2"]'); focusOn(y); if (y) y.scrollIntoView({ block: "nearest" }); },
+    daykeep: () => { ph.delDay = false; render(); focusOn(root.querySelector('[data-act="daydel1"]')); },
+    daydel2: () => { const d = viewDay(), ids = pList(d).map((p) => p.id); delete state.journal[d]; ph.delDay = false; ph.open = null; ph.msg = ""; dirty = true; writeNow();
+      if (storageOK && PHOTOS && ids.length) PHOTOS.remove(ids).catch(() => {});
+      render(); flash("This day's page is deleted"); const h1 = root.querySelector("main h1"); if (h1) { h1.tabIndex = -1; focusOn(h1); } },
+    bkphotos1: () => { if (!PHOTOS || ph.ok !== true) return;
+      PHOTOS.list().then((rows) => { const used = new Set(photoIds(state)), mine = rows.filter((r) => used.has(r.id));
+        ph.bk = { n: mine.length, bytes: Math.round(mine.reduce((a, r) => a + r.bytes, 0) * 4 / 3) + JSON.stringify(state).length, busy: false };
+        render(); focusOn(root.querySelector('[data-act="bkphotos2"]')); }, () => flash("The photographs could not be read.")); },
+    bkphotosno: () => { ph.bk = null; render(); focusOn(root.querySelector('[data-act="bkphotos1"]')); },
+    bkphotos2: () => { backupWithPhotos(); },
+    restoreyes: () => { restoreWithPhotos(); },
+    restoreno: () => { if (ph.restore && ph.restore.busy) return; ph.restore = null; render(); focusOn(document.getElementById("backup-in")); flash("Nothing was changed"); },
     diaryview: (el) => { checkDay(); ui.diaryView = el.dataset.v === "examen" ? "examen" : "diary"; render({ nav: true }); window.scrollTo(0, 0); pushRoute(); },
-    dayshift: (el) => { const n = Number(el.dataset.n) || 0; ui.day = L.iso(L.shift(fromISO(viewDay()), n)); render(); },
-    daytoday: () => { ui.day = null; render(); },
+    dayshift: (el) => { const n = Number(el.dataset.n) || 0; ui.day = L.iso(L.shift(fromISO(viewDay()), n)); ph.msg = ""; ph.delDay = false; render(); },
+    daytoday: () => { ui.day = null; ph.msg = ""; ph.delDay = false; render(); },
     opendiary: () => go("diary"),
-    dayopen: (el) => { if (!isISO(el.dataset.d)) return; ui.day = el.dataset.d; render({ nav: true }); window.scrollTo(0, 0); },
+    dayopen: (el) => { if (!isISO(el.dataset.d)) return; ui.day = el.dataset.d; ph.msg = ""; ph.delDay = false; render({ nav: true }); window.scrollTo(0, 0); },
     carry: (el) => { const d = el.dataset.d; if (!isISO(d)) return; const y = jGet(L.iso(L.shift(fromISO(d), -1))).p || {}; setPath("journal." + d + ".p", Object.assign({}, y)); save(); render(); flash("Carried forward"); },
     download: () => { const copy = JSON.parse(JSON.stringify(state)); copy.meta.lastBackup = new Date().toISOString();
       saveFile("illuminated-life-backup-" + todayISO() + ".json", JSON.stringify(copy, null, 2), "application/json").then((ok) => { if (ok) { markBackup(); flash("Backup saved"); } }); },
@@ -1575,7 +1882,9 @@
     gosteward: () => { go("rule"); const el = document.getElementById("steward"); if (el) { el.scrollIntoView({ block: "start" }); window.scrollBy(0, -70); } },
     ...icoActs,
     erase1: () => { const b = document.getElementById("erase2"); if (b) { b.hidden = false; b.focus(); } },
-    erase2: () => { dirty = false; clearTimeout(saveTimer); unreadable = null; try { localStorage.removeItem(KEY); localStorage.removeItem(KEY + "-unreadable"); } catch (e) { /* nothing stored */ } state = blank(); ui.mem = {}; ui.open = null; ui.day = null; icoReset(); go("today"); flash("Erased"); }
+    erase2: () => { dirty = false; clearTimeout(saveTimer); unreadable = null; try { localStorage.removeItem(KEY); localStorage.removeItem(KEY + "-unreadable"); } catch (e) { /* nothing stored */ } state = blank(); stateRead = false; ui.mem = {}; ui.open = null; ui.day = null; icoReset();
+      if (PHOTOS) PHOTOS.clear().catch(() => {}); // the photographs go with the words
+      pForget(); go("today"); flash("Erased"); }
   };
 
   root.addEventListener("click", (e) => { const el = e.target.closest("[data-act]"); if (el && root.contains(el) && Object.prototype.hasOwnProperty.call(acts, el.dataset.act)) acts[el.dataset.act](el); });
@@ -1584,6 +1893,7 @@
     if (el.dataset.mem) { ui.mem[el.dataset.mem] = el.value; return; } // kept for this sitting only, never stored
     if (G && G.onInput(el)) return;
     if (el.id === "new-comp") { const l = document.getElementById("new-link"); if (l) l.hidden = el.value !== "custom"; return; }
+    if (el.dataset.pcap) { const p = pList(viewDay()).find((x) => x.id === el.dataset.pcap); if (p) { p.caption = el.value.replace(/\s+/g, " ").slice(0, 120); save(); } return; }
     if (el.dataset.bind) {
       setPath(el.dataset.bind, el.value); save();
       if (el.dataset.bind.startsWith("treasury.")) refreshTreasury();
@@ -1606,8 +1916,11 @@
       if (el.value.trim() && !url) { flash("That link is not a web address. Begin it with https://"); return; }
       r.link = url; el.value = url; save();
     }
+    if (el.dataset.range) ui.printRange = ["day", "week", "month", "all"].includes(el.value) ? el.value : "month";
+    if (el.id === "photo-file" && el.files && el.files.length) { const files = Array.from(el.files); el.value = ""; addPhotos(files, viewDay()); }
     if (el.id === "backup-file" && el.files && el.files[0]) {
-      if (el.files[0].size > 5000000) { flash("That file is too large to be a backup. Nothing was changed."); return; }
+      // A backup of words alone is small. One with photographs can be large, but not without end.
+      if (el.files[0].size > (ph.ok === true ? 600000000 : 5000000)) { flash("That file is too large to be a backup. Nothing was changed."); return; }
       const fr = new FileReader(); fr.onload = () => restore(String(fr.result)); fr.onerror = () => flash("That file could not be read. Nothing was changed."); fr.readAsText(el.files[0]);
     }
   });
@@ -1671,6 +1984,8 @@
   render({ nav: true });
   pushRoute(true);
   if (loadFailed) flash("Your saved words could not be read. Nothing has been overwritten. Restore a backup from More.");
+  // Can this browser window keep photographs? Once that is known, the Diary shows the card or the note, and stray pictures are cleared.
+  if (PHOTOS) PHOTOS.ready().then((ok) => { ph.ok = !!ok; if (ok) sweepPhotos(); if (ui.tab === "diary" || (ui.tab === "more" && ui.sub === "backup")) render(); });
 
   /* sw:start */
   // Offline use, on the real site (and on localhost, for testing).
