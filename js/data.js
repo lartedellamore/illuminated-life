@@ -5,13 +5,20 @@
 window.IL = window.IL || {};
 
 IL.RINGS = [
-  { id: "person", name: "The Person", says: "What I am", hours: "I to IV",
+  { id: "person", colour: "person", colourName: "ruby", name: "The Person", says: "What I am", hours: "I to IV",
     gloss: "Body, mind, soul and heart: the four with which we are asked to love God (Mark 12:30). They come first because the self is the first thing entrusted to you, and you cannot give what you have not received." },
-  { id: "household", name: "The Household", says: "What I keep", hours: "V to VIII",
+  { id: "household", colour: "household", colourName: "sapphire", name: "The Household", says: "What I keep", hours: "V to VIII",
     gloss: "Time, money, work and home. The steward of the Gospel is the manager of a household. Here love takes structure, or stays a feeling." },
-  { id: "world", name: "The World", says: "What I give", hours: "IX to XII",
+  { id: "world", colour: "world", colourName: "emerald", name: "The World", says: "What I give", hours: "IX to XII",
     gloss: "Creation, speech, beauty and mission. The neighbour, widened to the earth itself. Here the light leaves your hands." }
 ];
+
+/* The centre of the rose is kept in gold. It belongs to no ring. */
+IL.CENTRE = { name: "The centre", says: "Not yours to light" };
+
+/* The three ring colours are a memory aid, like the glass of a rose window.
+   They are not the Church's liturgical colours. The values live in css/styles.css. */
+IL.COLOUR_NOTE = "The three colours mark the three rings: ruby for the Person, sapphire for the Household, emerald for the World. Gold is kept for the centre. They are a memory aid, like the glass of a rose window, and are not the Church's liturgical colours.";
 
 IL.LEVELS = ["Not yet begun", "Kindled", "Shining", "Burning", "Radiant"];
 
@@ -152,6 +159,12 @@ IL.FIELDS = [
     verse: { t: "As you did it to one of the least of these my brothers, you did it to me.", r: "Matthew 25:40" },
     ccc: "905, 2443-2449" }
 ];
+
+/* The ring a field belongs to (and so its colour). Null for an unknown field. */
+IL.ringOf = function (fieldId) {
+  const f = IL.FIELDS.find((x) => x.id === fieldId);
+  return (f && IL.RINGS.find((R) => R.id === f.ring)) || null;
+};
 
 IL.LAWS = [
   ["Grace comes first, always.", "Every good act begins in God's initiative. Even our preparing to receive grace is already a work of grace. Effort is real, and it is always a response."],

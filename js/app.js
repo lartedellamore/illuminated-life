@@ -97,7 +97,7 @@
       church: { parish: "", confession: "monthly", ahead: "", beside: "", behind: "", shownTo: "", shownOn: "" },
       diary: {}, journal: {},
       treasury: { currency: "€", income: "", buckets: BUCKETS.map(([name, note, pct]) => ({ name, note, pct })) },
-      prefs: { pdfVerse: true }, meta: { lastBackup: "" }
+      prefs: { pdfVerse: true, region: "general", sundayFeasts: false }, meta: { lastBackup: "" }
     };
   }
 
@@ -168,6 +168,7 @@
     base.treasury.buckets.forEach((b, i) => { const x = obj(tb[i]); if (typeof x.pct === "number" || typeof x.pct === "string") b.pct = str(x.pct, 8); });
 
     const pf = obj(src.prefs); base.prefs.pdfVerse = pf.pdfVerse !== false;
+    base.prefs.region = pf.region === "nl" ? "nl" : "general"; base.prefs.sundayFeasts = pf.sundayFeasts === true;
     const me = obj(src.meta); base.meta.lastBackup = typeof me.lastBackup === "string" && !isNaN(Date.parse(me.lastBackup)) ? new Date(Date.parse(me.lastBackup)).toISOString() : "";
     return base;
   }
@@ -199,7 +200,8 @@
 
   const ui = {
     tab: "today", sub: null, open: null, gild: null, toast: null, showPrayer: false, day: null, diaryView: "diary",
-    printKind: "rule", printRange: "month", today: todayISO(), mem: {}, later: {}, confirmFocus: null, editRule: null, updated: false
+    printKind: "rule", printRange: "month", today: todayISO(), mem: {}, later: {}, confirmFocus: null, editRule: null, updated: false,
+    cal: null, calView: "month", calDay: null, calFocus: null, calWeek: null
   };
 
   function setPath(path, value) {
@@ -245,7 +247,13 @@
     shield: "M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6Z"
   };
   const icon = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="${n === "more" ? 2.6 : 1.5}" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n] || ICONS.spark}"/></svg>`;
-  const badge = (n, gold) => `<span class="badge ${gold ? "gold" : ""}">${icon(n)}</span>`;
+  // Ring colours: every field takes the colour of its ring. Gold stays with the centre.
+  const rc = (fieldId) => { const R = IL.ringOf(fieldId); return R ? "rc-" + R.colour : ""; };
+  const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);
+  // A field's badge (third argument) takes its ring colour; other badges stay blue or gold.
+  const badge = (n, gold, fieldId) => `<span class="badge ${fieldId && rc(fieldId) ? rc(fieldId) : gold ? "gold" : ""}">${icon(n)}</span>`;
+  const fname = (f) => `<span class="fname ${rc(f.id)}">${esc(f.name)}</span>`;
+  const ringLegend = () => `<ul class="legend" aria-label="What the colours mean">${RINGS.map((R) => `<li><i class="sw rc-${R.colour}" aria-hidden="true"></i><span><b>${R.name}</b> · ${lower(R.says)}</span></li>`).join("")}<li><i class="sw centre" aria-hidden="true"></i><span><b>${IL.CENTRE.name}</b> · ${lower(IL.CENTRE.says)}</span></li></ul>`;
 
   /* ───────── the rose window: twelve petals, numbered like the hours ─────────
      One image for assistive technology. The same fields are an ordinary list on the Fields screen. */
@@ -259,26 +267,26 @@
   }
   function rose() {
     const pt = (r, deg) => { const a = (deg * Math.PI) / 180; return [100 + r * Math.sin(a), 100 - r * Math.cos(a)]; };
-    const arc = (from, to) => { const [x1, y1] = pt(92, from), [x2, y2] = pt(92, to); return `<path class="arc" d="M${x1.toFixed(1)} ${y1.toFixed(1)}A92 92 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}"/>`; };
+    const arc = (from, to, R) => { const [x1, y1] = pt(92, from), [x2, y2] = pt(92, to); return `<path class="arc rc-${R.colour}" d="M${x1.toFixed(1)} ${y1.toFixed(1)}A92 92 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}"/>`; };
     const petal = "M100 32C111 45 111 63 100 78C89 63 89 45 100 32Z";
     const petals = FIELDS.map((f, i) => {
       const deg = (i + 1) * 30, lvl = state.fields[f.id].level, [nx, ny] = pt(78, deg);
       const focus = state.focus && state.focus.field === f.id ? 1 : 0;
-      return `<g class="p" data-act="gofield" data-f="${esc(f.id)}" data-focus="${focus}">
+      return `<g class="p ${rc(f.id)}" data-act="gofield" data-f="${esc(f.id)}" data-focus="${focus}">
         <g transform="rotate(${deg} 100 100)"><path class="petal-line" d="${petal}"/><path class="petal-fill" d="${petal}" style="opacity:${lvl / 4}"/></g>
         <text class="num" x="${nx.toFixed(1)}" y="${(ny + 3.2).toFixed(1)}" text-anchor="middle">${f.n}</text></g>`;
     }).join("");
-    return `<svg class="rose" viewBox="0 0 200 200" role="img" aria-label="${esc(roseLabel())}">
-      <circle class="ring" cx="100" cy="100" r="86"/>${arc(19, 131)}${arc(139, 251)}${arc(259, 371)}
-      ${petals}<circle class="halo" cx="100" cy="100" r="17"/><circle class="core" cx="100" cy="100" r="10"/></svg>`;
+    return `<div class="rosewrap"><svg class="rose" viewBox="0 0 200 200" role="img" aria-label="${esc(roseLabel())}">
+      <circle class="ring" cx="100" cy="100" r="86"/>${arc(19, 131, RINGS[0])}${arc(139, 251, RINGS[1])}${arc(259, 371, RINGS[2])}
+      ${petals}<circle class="halo" cx="100" cy="100" r="17"/><circle class="core" cx="100" cy="100" r="10"/></svg>${ringLegend()}</div>`;
   }
 
   /* ───────── shared pieces ───────── */
   function keepRow(r, doneNow, act, extra) {
     const f = r.field ? fieldById(r.field) : null, c = companionOf(r);
     const btn = (cls) => `<button class="${cls} row keep" data-act="${act}" ${extra} aria-pressed="${doneNow ? "true" : "false"}">
-      ${badge(f ? f.icon : "flame")}
-      <span class="rowtext"><b>${esc(r.text)}</b><span>${esc([r.time, r.note].filter(Boolean).join(" · "))}</span></span>
+      ${badge(f ? f.icon : "flame", false, f && f.id)}
+      <span class="rowtext"><b>${esc(r.text)}</b><span>${[f ? fname(f) : "", esc(r.time), r.note && !(f && r.note === f.name) ? esc(r.note) : ""].filter(Boolean).join(" · ")}</span></span>
       <span class="ringc" aria-hidden="true"><svg viewBox="0 0 36 36"><circle class="rt" cx="18" cy="18" r="15"/><circle class="rp" cx="18" cy="18" r="15"/></svg>
       <svg class="tick" viewBox="0 0 24 24"><path d="m7 12.5 3.4 3.4L17 9"/></svg></span></button>`;
     if (!c) return btn("pane");
@@ -290,11 +298,24 @@
   const back = () => `<button class="back" data-act="back">${icon("chev", 16)} Back</button>`;
   const companionOptions = (sel) => `<option value="">No companion</option>${COMPANIONS.map((c) => `<option value="${esc(c.id)}" ${sel === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}<option value="custom" ${sel === "custom" ? "selected" : ""}>Another link</option>`;
 
+  // The greater days ahead: solemnities, feasts of the Lord, and the days the seasons turn on.
   function upcomingFeasts(n) {
     const now = new Date(), t = todayISO();
-    return L.feasts(now.getFullYear()).concat(L.feasts(now.getFullYear() + 1)).filter((x) => x.date >= t).slice(0, n);
+    return L.feasts(now.getFullYear()).concat(L.feasts(now.getFullYear() + 1)).filter((x) => x.date >= t && (x.rank !== "feast" || x.lord)).slice(0, n);
   }
-  const feastName = (u) => esc(u.name) + (u.moved ? ` <span class="moved">(moved this year)</span>` : "");
+  const feastName = (u) => esc(L.shortName(u.name)) + (u.moved ? ` <span class="moved">(moved this year)</span>` : "");
+
+  /* ───────── the day in the Church's year ───────── */
+  // The calendar follows the saved setting: the general calendar, or the Netherlands.
+  const useCalendar = () => L.use({ region: state.prefs.region, sunday: state.prefs.sundayFeasts });
+  const litDay = (isoDate) => L.day(fromISO(isoDate));
+  // Liturgical colour of the day: a small bead. White is drawn as a ring.
+  const bead = (colour) => `<i class="lc lc-${esc(colour)}" aria-hidden="true"></i>`;
+  // Rank is shown by weight: solemnity in bold small capitals, feast bold, memorial plain, optional memorial italic.
+  const rankClass = (d) => (d.rank === "solemnity" || d.rank === "triduum" ? "rk-s" : d.rank === "feast" || d.rank === "commemoration" || d.major ? "rk-f" : d.rank === "memorial" ? "rk-m" : d.optional.length ? "rk-o" : d.rank === "sunday" ? "rk-sun" : "rk-w");
+  const rankWords = (d) => (d.rank === "feast" && d.lord ? "Feast of the Lord" : d.rank === "commemoration" ? "Commemoration, ranked with the solemnities" : d.rankLabel) + (d.proper ? " (proper calendar)" : "");
+  const dayLabel = (d) => `${longDate(d.iso)}: ${d.name}, ${rankWords(d).toLowerCase()}, ${d.colourLabel}` + (d.optional.length ? ". May also be kept: " + d.optional.map((o) => o.name).join("; ") : "");
+  const dayLine = (isoDate) => { const d = litDay(isoDate); return `<span class="dayfeast">${bead(d.colour)}<span>${esc(L.lineText(d))}</span></span>`; };
 
   /* ───────── Today ───────── */
   function anchorHints(now) {
@@ -306,12 +327,11 @@
   function Today() {
     const now = new Date(), d = todayISO(), S = L.SEASONS[L.seasonOn(now)];
     const v = verseFor(now);
-    const feast = L.feasts(now.getFullYear()).find((x) => x.date === d);
     const started = state.focus || FIELDS.some((f) => state.fields[f.id].level > 0);
     const F = state.focus ? fieldById(state.focus.field) : null;
     let h = `<section class="stack">
       <div class="pane quiet verse"><h1 class="rub center"><span class="vh">Today, </span>${esc(fmt(now, { weekday: "long", day: "numeric", month: "long" }))}</h1>
-        <p class="vtext">“${esc(v.t)}”</p><p class="vref">${esc(v.r)}${feast ? " · " + esc(feast.name) : ""}</p></div>
+        <p class="vtext">“${esc(v.t)}”</p><p class="vref">${esc(v.r)}</p></div>
       <div class="pane quiet rosepane">${rose()}
         <div><span class="rub">Twelve fields, one steward</span>
           <h2 class="h2">${F ? "This season: " + esc(F.name) : "Everything you hold, on one page"}</h2>
@@ -330,8 +350,8 @@
     }
     if (F) {
       const day = Math.max(1, L.daysBetween(fromISO(state.focus.since), now) + 1), r = state.fields[F.id];
-      h += `<button class="pane row link-row field focus" data-act="gofield" data-f="${esc(F.id)}">${badge(F.icon, true)}
-        <span class="rowtext"><b>${esc(F.name)} · day ${day} of about ninety</b>
+      h += `<button class="pane row link-row field focus" data-act="gofield" data-f="${esc(F.id)}">${badge(F.icon, true, F.id)}
+        <span class="rowtext"><b><span class="fnum ${rc(F.id)}">${F.n}</span> · ${esc(F.name)} · day ${day} of about ninety</b>
         <span>${r.spend ? "Spend: " + esc(r.spend) : "Write its four movements: receive, bless, spend, return."}</span>
         ${r.act ? `<span>Next act: ${esc(r.act)}</span>` : ""}</span>${icon("chev", 18)}</button>
         ${day >= 90 && !ui.later.season ? `<div class="pane lit pad"><span class="rub">The season is complete</span><p>Ninety days with one field. Give thanks, look again at the twelve, and ask which field is next.</p><div class="btnrow"><button class="gold-btn" data-act="sub" data-s="review">Review the season</button><button class="pill" data-act="later" data-k="season">Later</button></div></div>` : ""}`;
@@ -378,10 +398,10 @@
   function fieldCard(f) {
     const r = state.fields[f.id], lvl = r.level, open = ui.open === f.id;
     const isFocus = state.focus && state.focus.field === f.id;
-    let h = `<div class="pane field ${open ? "open" : ""} ${isFocus ? "focus" : ""} ${ui.gild === f.id ? "gilding" : ""}" id="field-${esc(f.id)}">
+    let h = `<div class="pane field ${rc(f.id)} ${open ? "open" : ""} ${isFocus ? "focus" : ""} ${ui.gild === f.id ? "gilding" : ""}" id="field-${esc(f.id)}">
       <button class="row field-head" data-act="open" data-f="${esc(f.id)}" aria-expanded="${open}" aria-controls="fieldbody-${esc(f.id)}">
-        <span class="lampwrap">${badge(f.icon, lvl > 0)}<svg class="lamp" viewBox="0 0 44 44" aria-hidden="true"><circle class="lt" cx="22" cy="22" r="20"/><circle class="lp" cx="22" cy="22" r="20" style="stroke-dashoffset:${125.6 - 125.6 * (lvl / 4)}"/></svg></span>
-        <span class="rowtext"><b>${f.n} · ${esc(f.name)}</b><span>${LEVELS[lvl]}${isFocus ? " · this season's field" : ""}</span></span>
+        <span class="lampwrap">${badge(f.icon, lvl > 0, f.id)}<svg class="lamp" viewBox="0 0 44 44" aria-hidden="true"><circle class="lt" cx="22" cy="22" r="20"/><circle class="lp" cx="22" cy="22" r="20" style="stroke-dashoffset:${125.6 - 125.6 * (lvl / 4)}"/></svg></span>
+        <span class="rowtext"><b><span class="fnum">${f.n}</span> · ${esc(f.name)}</b><span>${LEVELS[lvl]}${isFocus ? " · this season's field" : ""}</span></span>
         <span class="chev">${icon("chev", 18)}</span></button>`;
     if (!open) return h + `</div>`;
     h += `<div class="field-body" id="fieldbody-${esc(f.id)}">
@@ -407,8 +427,9 @@
   function Fields() {
     return `<section class="stack"><h1 class="h1">The Twelve Fields</h1>
       <p class="lede">Everything you have been given, in three rings. God ordinarily asks about one field at a time.</p>
+      ${ringLegend()}
       <p><button class="link" data-act="sub" data-s="model">How the model works</button></p>
-      ${RINGS.map((R) => `<div class="ringhead"><span class="rub">${R.says} · ${R.hours}</span><h2 class="h2">${R.name}</h2><p class="sub">${esc(R.gloss)}</p></div>
+      ${RINGS.map((R) => `<div class="ringhead rc-${R.colour}"><span class="rub">${R.says} · ${R.hours}</span><h2 class="h2"><i class="sw" aria-hidden="true"></i>${R.name}</h2><p class="sub">${esc(R.gloss)}</p></div>
         ${FIELDS.filter((f) => f.ring === R.id).map(fieldCard).join("")}`).join("")}</section>`;
   }
 
@@ -418,7 +439,7 @@
       const rows = state.rule.filter((r) => r.cadence === c);
       return `<h2 class="h2 mt">${title}</h2>${rows.length ? `<div class="pane">${rows.map((r) => {
         const f = r.field ? fieldById(r.field) : null, comp = companionOf(r), edit = ui.editRule === r.id, id = esc(r.id);
-        return `<div class="rulerow"><div class="row">${badge(f ? f.icon : "flame")}<span class="rowtext"><b>${esc(r.text)}</b><span>${esc([f ? f.name : "", r.time, r.note].filter(Boolean).join(" · "))}</span>${comp ? `<span class="withc">With ${esc(comp.name)}</span>` : ""}</span>
+        return `<div class="rulerow"><div class="row">${badge(f ? f.icon : "flame", false, f && f.id)}<span class="rowtext"><b>${esc(r.text)}</b><span>${[f ? fname(f) : "", esc(r.time), r.note && !(f && r.note === f.name) ? esc(r.note) : ""].filter(Boolean).join(" · ")}</span>${comp ? `<span class="withc">With ${esc(comp.name)}</span>` : ""}</span>
           <button class="icobtn" data-act="editrule" data-id="${id}" aria-expanded="${edit}" aria-label="Companion for ${esc(r.text)}">${icon("pen", 18)}</button><button class="icobtn" data-act="delrule" data-id="${id}" aria-label="Remove ${esc(r.text)}">${icon("trash", 18)}</button></div>
           ${edit ? `<div class="ruleedit"><label class="fieldset"><span class="lab">Companion app</span><select class="in" id="rc-${id}" data-bind="rule:${id}:companion" data-rerender="1">${companionOptions(r.companion)}</select></label>
             ${r.companion === "custom" ? `<label class="fieldset"><span class="lab">Link</span><input class="in" id="rl-${id}" type="url" inputmode="url" autocomplete="off" data-link="${id}" value="${esc(r.link)}" placeholder="https://"></label>` : ""}
@@ -495,7 +516,7 @@
       <p class="lede">Seven thanks, three prayers, one act of service. A few minutes, any time of day.</p>
       <div class="pane quiet pad datebar"><button class="pill" data-act="dayshift" data-n="-1" aria-label="The day before">Earlier</button>
         <b class="dayname">${esc(longDate(d))}</b>
-        ${d === t ? `<span class="tag">Today</span>` : `<button class="pill gold" data-act="daytoday">Today</button>`}</div>
+        ${d === t ? `<span class="tag">Today</span>` : `<button class="pill gold" data-act="daytoday">Today</button>`}${dayLine(d)}</div>
       <div class="pane pad"><span class="rub">Receive</span><h2 class="h2">Seven things I am grateful for</h2>
         <p class="sub">Name them one by one. Small ones count. Gratitude is the plain recognition that this was not mine first.</p>
         <div class="mt">${ROMAN7.map((r, i) => `<div class="gline"><span class="gnum" aria-hidden="true">${r}</span><input class="in" id="g-${i}" data-bind="journal.${esc(d)}.g.${i}" value="${esc(g[i])}" placeholder="${i === 0 ? "Thank you for…" : ""}" aria-label="Gratitude ${i + 1} of 7" maxlength="1000"></div>`).join("")}</div></div>
@@ -536,7 +557,7 @@
     return `<div class="bp bcover"><p>A DIARY OF GRATITUDE</p><h1>Illuminated Life</h1><p><i>Receive, bless, spend, return.</i></p>
         <p>${days.length ? esc(days.length === 1 ? longDate(days[0]) : pretty(fromISO(days[0])) + " to " + longDate(days[days.length - 1])) : ""}</p></div>
       <div class="bp">${days.length ? days.map((k) => { const x = state.journal[k], vv = verseFor(fromISO(k));
-        return `<div class="ba bday"><h2>${esc(longDate(k))}</h2>
+        return `<div class="ba bday"><h2>${esc(longDate(k))}</h2><p class="blit">${esc(L.lineText(litDay(k)))}</p>
           ${list(x.g).length ? `<h3>I am grateful for</h3><ol>${list(x.g).map((v) => `<li>${esc(v)}</li>`).join("")}</ol>` : ""}
           ${list(x.p).length ? `<h3>I am praying for</h3><ul>${list(x.p).map((v) => `<li>${esc(v)}</li>`).join("")}</ul>` : ""}
           ${x.service ? `<h3>An act of service</h3><p>${esc(x.service)}${x.serviceDone ? " (done)" : ""}</p>` : ""}
@@ -548,7 +569,7 @@
   const MORE = [
     ["model", "The Steward's Model", "One Master, twelve fields, four movements, six laws", "spark"],
     ["review", "Season review", "Walk the twelve fields and choose one", "grid"],
-    ["year", "The Church's year", "The season, and the feasts ahead", "calendar"],
+    ["year", "The Church's year", "The whole calendar, day by day", "calendar"],
     ["treasury", "The Treasury", "First fruits, and an order for the rest", "coin"],
     ["prayers", "Prayers of the steward", "Morning, night, and the hard days", "flame"],
     ["companions", "Companions", "Other Catholic apps that give you the prayers themselves", "star"],
@@ -567,7 +588,7 @@
       <p class="lede">One Master entrusts one steward with twelve fields in three rings. In every field the same four movements take place.</p>
       <div class="pane quiet rosepane">${rose()}<div><span class="rub">Read it like a clock</span><p class="sub">Hours I to IV are the Person: what I am. V to VIII are the Household: what I keep. IX to XII are the World: what I give. The centre is not yours to light. It is the Master, who is light.</p></div></div>
       <h2 class="h2 mt">The centre</h2><div class="prose"><p>At the centre is not a goal or a best self. It is a Person. The servant who buried his talent said: I knew you to be a hard man, and I was afraid (Matthew 25:24-25). His failure began with a false picture of the master. Fear buries. Trust invests.</p></div>
-      <h2 class="h2 mt">Three rings</h2>${RINGS.map((R) => `<div class="pane pad"><span class="rub">${R.says}</span><h3 class="h3">${R.name}</h3><p class="sub">${esc(R.gloss)}</p></div>`).join("")}
+      <h2 class="h2 mt">Three rings</h2>${RINGS.map((R) => `<div class="pane pad ringcard rc-${R.colour}"><span class="rub">${R.says} · ${R.hours}</span><h3 class="h3"><i class="sw" aria-hidden="true"></i>${R.name}</h3><p class="sub">${esc(R.gloss)}</p></div>`).join("")}
       <p class="note">The rings are an order of flow and not a ranking of worth. Inner serves outer.</p>
       <h2 class="h2 mt">Four movements</h2><div class="prose"><p>They echo what the Lord did with bread: he took, blessed, broke and gave (Matthew 26:26). By baptism you share in Christ's priesthood, and your work, prayer, family life and rest become an offering joined to his (Catechism 901; Romans 12:1).</p></div>
       <div class="moves">${MOVES.map((m) => `<div class="move"><div class="mh"><b>${m.name}</b><em>${m.verb}</em></div><p>${esc(m.ask)}</p><p class="note">${esc(m.prayer)}</p></div>`).join("")}</div>
@@ -578,7 +599,7 @@
   function Review() {
     return `<h1 class="h1">Season review</h1><p class="lede">A glance, not a verdict. Be quick and honest, then choose one field.</p>
       <div class="pane pad">${FIELDS.map((f) => { const lvl = state.fields[f.id].level, isF = state.focus && state.focus.field === f.id, id = esc(f.id);
-        return `<div class="reviewrow"><span class="nm"><b>${f.n} · ${esc(f.name)}</b><span id="lv-${id}">${LEVELS[lvl]}</span></span>
+        return `<div class="reviewrow"><span class="nm"><b><span class="fnum ${rc(f.id)}">${f.n}</span> · ${esc(f.name)}</b><span id="lv-${id}">${LEVELS[lvl]}</span></span>
           <span class="dots5" role="group" aria-label="${esc(f.name)}: light">${[1, 2, 3, 4].map((n) => `<button data-act="setlevel" data-f="${id}" data-l="${n}" aria-pressed="${lvl >= n}" aria-label="${esc(f.name)}: ${LEVELS[n]}"></button>`).join("")}</span>
           <button class="pill ${isF ? "gold" : ""}" data-act="focus" data-f="${id}" aria-pressed="${isF ? "true" : "false"}" aria-label="${isF ? esc(f.name) + " is this season's field" : "Choose " + esc(f.name) + " for this season"}">${isF ? "This season" : "Choose"}</button>
           ${!isF && ui.confirmFocus === f.id ? focusControl(f) : ""}</div>`; }).join("")}</div>
@@ -587,13 +608,96 @@
       <p class="creed">Master, make me faithful in the field I have been avoiding.</p>`;
   }
 
+  /* ───────── The Church's year: month, week, and the days ahead ───────── */
+  const MONTH_NAMES = Array.from({ length: 12 }, (_, i) => fmt(new Date(2024, i, 1), { month: "long" }));
+  const DOW = [["Mo", "Monday"], ["Tu", "Tuesday"], ["We", "Wednesday"], ["Th", "Thursday"], ["Fr", "Friday"], ["Sa", "Saturday"], ["Su", "Sunday"]];
+  const calMonth = () => { if (!ui.cal) { const n = new Date(); ui.cal = { y: n.getFullYear(), m: n.getMonth() }; } return ui.cal; };
+  const mondayOf = (d) => L.shift(d, -((d.getDay() + 6) % 7));
+  const dayRow = (d, t, withDate) => `<button class="drow ${d.iso === t ? "today" : ""}" data-act="calday" data-d="${d.iso}" aria-label="${esc(dayLabel(d))}${d.iso === t ? " (today)" : ""}">
+      <span class="dd" aria-hidden="true"><b>${d.date.getDate()}</b>${esc(withDate ? fmt(d.date, { month: "short" }) : fmt(d.date, { weekday: "short" }))}</span>${bead(d.colour)}
+      <span class="dn"><span class="${rankClass(d).replace("rk-o", "rk-w")}">${esc(d.name)}</span>${d.moved ? ` <span class="moved">(moved this year)</span>` : ""}
+      ${d.optional.length ? `<span class="rk-o dopt">${d.optional.map((o) => esc(o.name)).join(" · ")}</span>` : ""}</span></button>`;
+
+  function CalendarMonth(t) {
+    const { y, m } = calMonth(), days = L.year(y).days.filter((d) => d.date.getMonth() === m);
+    const lead = (days[0].date.getDay() + 6) % 7, cells = Array(lead).fill(null).concat(days);
+    while (cells.length % 7) cells.push(null);
+    const inMonth = (isoDate) => isoDate && isoDate.slice(0, 7) === days[0].iso.slice(0, 7);
+    const focus = inMonth(ui.calFocus) ? ui.calFocus : inMonth(t) ? t : days[0].iso;
+    const rows = []; for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+    const greater = days.filter((d) => d.rank !== "weekday" && d.rank !== "sunday" || d.major);
+    return `<div class="pane calpane">
+        <div class="calnav"><button class="pill" data-act="calshift" data-n="-1" aria-label="The month before">Earlier</button>
+          <h2 class="calmonth" id="cal-title" aria-live="polite">${esc(MONTH_NAMES[m])} ${y}</h2>
+          <button class="pill" data-act="calshift" data-n="1" aria-label="The month after">Later</button></div>
+        <div class="cal" role="grid" aria-labelledby="cal-title">
+          <div class="calrow calhead" role="row">${DOW.map(([s, l]) => `<span role="columnheader" aria-label="${l}">${s}</span>`).join("")}</div>
+          ${rows.map((r) => `<div class="calrow" role="row">${r.map((d) => (d ? `<span role="gridcell"><button class="calday ${rankClass(d)} ${d.iso === t ? "today" : ""} ${d.iso === ui.calFocus ? "sel" : ""}" data-act="calday" data-d="${d.iso}" tabindex="${d.iso === focus ? 0 : -1}" aria-label="${esc(dayLabel(d))}${d.iso === t ? " (today)" : ""}"><b>${d.date.getDate()}</b>${bead(d.colour)}</button></span>` : `<span role="gridcell" class="calblank"></span>`)).join("")}</div>`).join("")}
+        </div>
+        <div class="calfoot"><button class="pill gold" data-act="caltoday">Today</button>
+          <select class="in" id="cal-jump" aria-label="Jump to a principal feast of ${y}"><option value="">Jump to a feast of ${y}…</option>${L.principal(y).map((f) => `<option value="${f.date}">${esc(f.name)} · ${esc(fmt(fromISO(f.date), { day: "numeric", month: "short" }))}</option>`).join("")}</select></div>
+      </div>
+      <div class="legend-lit" role="group" aria-label="Key"><span class="lk"><b>Liturgical colour of the day</b></span>
+        ${[["white", "white"], ["red", "red"], ["green", "green"], ["violet", "violet"], ["rose", "rose"]].map(([c, l]) => `<span class="lk">${bead(c)}${l}</span>`).join("")}
+        <span class="lk wide"><span class="rk-s">Solemnity</span> · <span class="rk-f">Feast</span> · <span class="rk-m">Memorial</span> · <span class="rk-o">Optional memorial</span></span></div>
+      ${greater.length ? `<h2 class="h2 mt">The greater days of ${esc(MONTH_NAMES[m])}</h2><div class="pane dlist">${greater.map((d) => dayRow(d, t, false)).join("")}</div>` : ""}`;
+  }
+  function CalendarWeek(t) {
+    const start = mondayOf(fromISO(ui.calWeek && isISO(ui.calWeek) ? ui.calWeek : t)), days = [0, 1, 2, 3, 4, 5, 6].map((i) => L.day(L.shift(start, i)));
+    const thisWeek = L.iso(mondayOf(fromISO(t))) === days[0].iso;
+    return `<div class="pane calpane"><div class="calnav"><button class="pill" data-act="weekshift" data-n="-7" aria-label="The week before">Earlier</button>
+        <h2 class="calmonth" aria-live="polite">${thisWeek ? "This week" : esc(pretty(days[0].date)) + " to " + esc(pretty(days[6].date))}</h2>
+        <button class="pill" data-act="weekshift" data-n="7" aria-label="The week after">Later</button></div>
+      <div class="dlist">${days.map((d) => dayRow(d, t, false)).join("")}</div>
+      ${thisWeek ? "" : `<div class="calfoot"><button class="pill gold" data-act="caltoday">This week</button></div>`}</div>`;
+  }
+  function CalendarAhead(t) {
+    const now = new Date(), y = now.getFullYear();
+    const list = L.year(y).days.concat(L.year(y + 1).days).filter((d) => d.iso >= t && (d.rank === "solemnity" && !/Octave of Easter/.test(d.name) || d.rank === "triduum" || d.rank === "commemoration" || d.major || (d.rank === "feast" && d.lord))).slice(0, 18);
+    return `<div class="pane dlist">${list.map((d) => dayRow(d, t, true)).join("")}</div>
+      <p class="note">Solemnities, feasts of the Lord, and the days the seasons turn on. A day marked as moved is kept on another date this year, because a Sunday of Advent, Lent or Easter, Holy Week or the Easter Octave takes its place.</p>`;
+  }
   function Year() {
-    const now = new Date(), key = L.seasonOn(now), S = L.SEASONS[key], t = todayISO();
+    const t = todayISO(), d = litDay(t), S = L.SEASONS[d.season], nl = state.prefs.region === "nl";
+    const view = ui.calView === "week" ? CalendarWeek(t) : ui.calView === "ahead" ? CalendarAhead(t) : CalendarMonth(t);
     return `<h1 class="h1">The Church's year</h1>
-      <div class="pane lit pad"><span class="rub">Now · ${esc(S.colour)}</span><h2 class="h2">${esc(S.name)}</h2><p>${esc(S.asks)}</p>${S.more ? `<p>${esc(S.more)}</p>` : ""}</div>
-      <h2 class="h2 mt">The feasts ahead</h2><div class="pane pad">${upcomingFeasts(16).map((u) => `<div class="fline ${u.date === t ? "today" : ""}"><span>${feastName(u)}</span><span class="fd">${esc(pretty(fromISO(u.date)))}</span></div>`).join("")}</div>
-      <p class="note">A simplified general Roman calendar. In many countries the Epiphany, the Ascension and Corpus Christi are moved to a Sunday. The calendar of your own diocese governs.</p>
-      <p class="note">When St Joseph, the Annunciation or the Immaculate Conception meets a Sunday of Lent or Advent, Holy Week or the Easter Octave, it is kept on another day. Those dates are marked as moved.</p>`;
+      <div class="pane lit pad"><span class="rub">Today · ${esc(S.name)}</span>
+        <h2 class="h2 litname">${bead(d.colour)}<span>${esc(d.name)}</span></h2>
+        <p class="sub">${esc(rankWords(d))} · ${esc(d.colourLabel)}${d.name !== d.weekday && !d.inPlaceOf ? " · " + esc(d.weekdayShort) : ""}</p>
+        <p class="mt">${esc(S.asks)}</p>${S.more ? `<p>${esc(S.more)}</p>` : ""}
+        <p><button class="link" data-act="calday" data-d="${t}">About today</button></p></div>
+      <div class="seg three" role="group" aria-label="How to see the calendar">${[["month", "Month", "every day"], ["week", "This week", "day by day"], ["ahead", "Ahead", "the feasts"]].map(([v, l, e]) => `<button data-act="calview" data-v="${v}" aria-pressed="${ui.calView === v}">${l}<em>${e}</em></button>`).join("")}</div>
+      ${view}
+      <div class="pane pad"><span class="rub">Which calendar</span>
+        <label class="fieldset"><span class="lab">Calendar</span><select class="in" id="cal-region">${Object.keys(L.REGIONS).map((k) => `<option value="${k}" ${state.prefs.region === k ? "selected" : ""}>${esc(L.REGIONS[k])}</option>`).join("")}</select></label>
+        ${nl ? `<p class="note">Netherlands: the Epiphany on the Sunday between 2 and 8 January, the Ascension on its Thursday, Corpus Christi on the Sunday, St Willibrord on 7 November, and the national feasts as far as we could establish them. The days of your own diocese are not included.</p>`
+          : `<div class="switchrow"><span id="sun-lab">Epiphany, Ascension and Corpus Christi on Sunday<span class="note" style="display:block">As in many countries. Off: 6 January, and the two Thursdays.</span></span>
+            <label class="switch"><input type="checkbox" id="sun-feasts" data-toggle="sundayFeasts" ${state.prefs.sundayFeasts ? "checked" : ""} aria-labelledby="sun-lab"><span></span></label></div>`}
+        <p class="note calnote">Holy days of obligation differ from country to country. Beyond Sundays, check your diocese.</p></div>
+      <p class="note">This is the General Roman Calendar as best we can compute it. Your diocese, country or religious order has its own proper calendar, which takes precedence. For the readings of the day, open a companion app such as Laudate. <button class="link sm" data-act="sub" data-s="companions">See the companions</button></p>`;
+  }
+  // The detail of one day, in a sheet over the calendar.
+  function DaySheet() {
+    if (!ui.calDay || !isISO(ui.calDay)) return "";
+    const d = litDay(ui.calDay), own = d.name !== d.weekday;
+    const row = (k, v) => (v ? `<div><dt>${k}</dt><dd>${v}</dd></div>` : "");
+    const week = d.season === "triduum" ? "The Paschal Triduum" : d.seasonName.replace(/^the /, "") + (d.week ? ", week " + d.week : "");
+    return `<div class="sheet-back" data-act="calclose"></div>
+      <div class="sheet" id="daysheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">
+        <div class="sheet-top"><span class="rub">${esc(longDate(d.iso))}</span><button class="pill" data-act="calclose">Close</button></div>
+        <h2 class="h2 litname" id="sheet-title">${bead(d.colour)}<span class="${rankClass(d) === "rk-s" ? "rk-s" : ""}">${esc(d.name)}</span></h2>
+        <p class="sub">${esc(rankWords(d))} · liturgical colour: ${esc(d.colourLabel)}</p>
+        ${d.moved ? `<p class="sheet-note">Moved this year from ${esc(pretty(fromISO(d.moved.from)))}, where a higher day takes its place.</p>` : ""}
+        ${d.away.map((a) => `<p class="sheet-note">${esc(a.name)} is moved this year to ${esc(pretty(fromISO(a.to)))}.</p>`).join("")}
+        ${d.inPlaceOf ? `<p class="sheet-note">Kept in place of the ${esc(d.inPlaceOf)}.</p>` : ""}
+        ${d.note ? `<p class="sheet-note">${esc(d.note)}</p>` : ""}
+        <dl class="facts">${row("Season", esc(week))}${own && !d.inPlaceOf ? row("Weekday", esc(d.weekday)) : ""}
+          ${row("Sunday cycle", "Year " + d.sundayCycle)}${d.season === "ordinary" ? row("Weekday cycle", "Year " + d.weekdayCycle) : ""}${row("Psalter", "Week " + d.psalterWeek)}</dl>
+        ${d.optional.length ? `<h3 class="rub">${d.optional[0].commemoration ? "May be commemorated" : "May also be kept"}</h3><ul class="optlist">${d.optional.map((o) => `<li>${bead(o.colour)}<span class="rk-o">${esc(o.name)}</span><span class="note">${o.commemoration ? (o.memorial ? "memorial, kept as a commemoration in this season" : "optional memorial, as a commemoration") : "optional memorial · " + esc(o.colour)}</span></li>`).join("")}</ul>` : ""}
+        ${d.omitted.length ? `<p class="note">Not kept this year, because today ranks higher: ${d.omitted.map(esc).join("; ")}.</p>` : ""}
+        <div class="btnrow mt"><button class="pill" data-act="calstep" data-n="-1">The day before</button><button class="pill" data-act="calstep" data-n="1">The day after</button></div>
+        <p class="note">Your diocese, country or order may keep this day differently. For the readings, open a companion such as Laudate.</p>
+      </div>`;
   }
 
   function bucketAmount(b) { return (parseNum(state.treasury.income) * parseNum(b.pct)) / 100; }
@@ -657,6 +761,7 @@
       <h2 class="h2 mt">What it must never become</h2><p>It is not a spiritual director, a confessor or a diagnosis. It cannot absolve, and it cannot discern a vocation. If you carry trauma, depression, addiction or disordered eating, please work with a qualified professional, and let this accompany that work.</p>
       <p>If the app ever feels like a judge and not a trellis, switch on floor mode, or close it for a season. The anchors are enough.</p>
       <h2 class="h2 mt">If you are in crisis</h2><div class="pane quiet pad"><p>This app is not medical or pastoral care. If you are thinking of harming yourself, contact your doctor or a crisis line now.</p><p>In the Netherlands: 113 Suicide Prevention, call <a class="out inl" href="tel:113">113</a> or <a class="out inl" href="tel:08000113">0800-0113</a>, or <a class="out inl" href="https://www.113.nl/" target="_blank" rel="noopener noreferrer">113.nl</a>.</p><p style="margin:0">Elsewhere, call your local emergency number.</p></div>
+      <h2 class="h2 mt">The three colours</h2><p>${esc(IL.COLOUR_NOTE)}</p>${ringLegend()}
       <h2 class="h2 mt">On authority</h2><p>This app is a private work. It is not an official text of the Church, and it carries no imprimatur. Use it alongside a parish, a confessor and the sacraments, never in place of them.</p><p>It is meant to agree in every point with Sacred Scripture and the Magisterium, and it is submitted to the Church's judgement. Catechism numbers are given so that each claim can be checked.</p>
       <h2 class="h2 mt">Other apps</h2><p>The apps named under Companions are independent works. We are not affiliated with them, and their names belong to their owners.</p></div>
       <p class="creed">Come to him and be enlightened.</p>`;
@@ -672,7 +777,8 @@
         <h2 style="margin-top:18pt">My rule of life</h2><h3>Each day</h3>${by("daily")}<h3>Each week</h3>${by("weekly")}<h3>Each month</h3>${by("monthly")}<h3>Each year</h3>${by("yearly")}
         <h3>In the Body</h3><p>Parish: ${esc(c.parish)}</p><p>Confession: ${esc(c.confession)}</p><p>Ahead of me: ${esc(c.ahead)}   Beside me: ${esc(c.beside)}   Behind me: ${esc(c.behind)}</p><p>Shown to: ${esc(c.shownTo)} ${esc(c.shownOn)}</p></div>
       <div class="bp"><h2>The twelve fields</h2>${F ? `<p><i>This season's field: ${esc(F.name)}</i></p>` : ""}
-        ${FIELDS.map((f) => { const r = state.fields[f.id]; return `<div class="ba"><h3>${f.n}. ${esc(f.name)} · ${LEVELS[r.level]}</h3>${MOVES.filter((m) => r[m.id]).map((m) => `<p><b>${m.name}.</b> ${esc(r[m.id])}</p>`).join("")}${r.act ? `<p><b>Next act.</b> ${esc(r.act)}</p>` : ""}</div>`; }).join("")}</div>`;
+        ${RINGS.map((R) => `<p class="bring rc-${R.colour}">${R.name} · ${lower(R.says)} · ${R.hours}</p>
+          ${FIELDS.filter((f) => f.ring === R.id).map((f) => { const r = state.fields[f.id]; return `<div class="ba bfield rc-${R.colour}"><h3><span class="bnum">${f.n}.</span> ${esc(f.name)} · ${LEVELS[r.level]}</h3>${MOVES.filter((m) => r[m.id]).map((m) => `<p><b>${m.name}.</b> ${esc(r[m.id])}</p>`).join("")}${r.act ? `<p><b>Next act.</b> ${esc(r.act)}</p>` : ""}</div>`; }).join("")}`).join("")}</div>`;
   }
 
   /* ───────── render ─────────
@@ -690,13 +796,15 @@
   }
   function render(opts) {
     const o = opts || {}, keep = focusKey(document.activeElement), y = window.scrollY;
-    const S = L.SEASONS[L.seasonOn(new Date())];
+    useCalendar();
+    const today = litDay(todayISO()), tl = L.line(today);
     const screen = (SCREENS[ui.tab] || Today)();
-    root.innerHTML = `<header class="top">${PREVIEW ? `<span class="mark">Illuminated Life</span>` : `<a class="mark" href="index.html" title="About the book and the app">Illuminated Life</a>`}<span class="season-chip">${esc(S.name)}</span></header>
+    root.innerHTML = `<header class="top">${PREVIEW ? `<span class="mark">Illuminated Life</span>` : `<a class="mark" href="index.html" title="About the book and the app">Illuminated Life</a>`}<button class="season-chip" data-act="sub" data-s="year" aria-label="Today: ${esc(L.lineText(today))}. Open the calendar"><span class="sc-text"><b>${bead(today.colour)}${esc(tl.title)}</b>${tl.sub ? `<span>${esc(tl.sub)}</span>` : ""}</span></button></header>
       <main class="body ${o.nav ? "rise" : ""}" id="main">${screen}</main>
       <div class="toast" id="toast" role="status" ${ui.toast ? "" : "hidden"}>${esc(ui.toast || "")}</div>
       ${ui.updated && !ui.later.update ? `<div class="update" id="update" role="status"><span>Updated.</span><button class="link" data-act="reload">Reload</button><button class="link dim" data-act="later" data-k="update">Later</button></div>` : ""}
       <nav class="tabbar" aria-label="Sections">${NAV.map(([id, label, ic]) => `<button data-act="tab" data-t="${id}" ${ui.tab === id ? 'aria-current="page"' : ""}>${icon(ic, 22)}<span>${label}</span></button>`).join("")}</nav>
+      ${ui.tab === "more" && ui.sub === "year" ? DaySheet() : ""}
       <div class="book" aria-hidden="true">${Book()}</div>`;
     if (keep) {
       let el = null; try { el = root.querySelector(keep.sel); } catch (e) { /* the control is gone */ }
@@ -740,7 +848,7 @@
   }
   function go(tab, sub, opts) {
     checkDay();
-    ui.tab = SCREENS[tab] ? tab : "today"; ui.sub = sub || null; ui.confirmFocus = null; ui.editRule = null;
+    ui.tab = SCREENS[tab] ? tab : "today"; ui.sub = sub || null; ui.confirmFocus = null; ui.editRule = null; ui.calDay = null;
     if (ui.tab === "diary") { ui.day = null; ui.diaryView = "diary"; } // the Diary tab always opens on today's page
     render({ nav: true }); window.scrollTo(0, 0); pushRoute();
     // If the control that was pressed is gone, put focus on the new screen's heading.
@@ -808,6 +916,43 @@
   function markBackup() { state.meta.lastBackup = new Date().toISOString(); save(); const el = document.getElementById("last-backup"); if (el) el.textContent = "Last backup: " + fmt(new Date(), { day: "numeric", month: "long", year: "numeric" }); }
   function setFocusField(f) { state.focus = { field: f.id, since: todayISO() }; ui.confirmFocus = null; delete ui.later.season; save(); render(); flash(f.name + " is your field for this season"); }
 
+  /* ───────── the calendar: focus and keys ───────── */
+  function focusDay(isoDate) {
+    const b = root.querySelector(`.calday[data-d="${cssq(isoDate)}"]`) || root.querySelector(`.drow[data-d="${cssq(isoDate)}"]`);
+    if (b) { try { b.focus({ preventScroll: true }); } catch (e) { b.focus(); } b.scrollIntoView({ block: "nearest" }); }
+  }
+  function closeSheet() {
+    if (!ui.calDay) return;
+    const back = ui.calOpener, d = ui.calDay; ui.calDay = null; ui.calOpener = null; render();
+    let el = null; try { el = back && root.querySelector(back.sel); } catch (e) { /* the opener is gone */ }
+    if (el) { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } } else focusDay(d);
+  }
+  // Arrow keys walk the month grid; Page Up and Page Down change the month; Escape closes the day.
+  root.addEventListener("keydown", (e) => {
+    if (ui.calDay) {
+      if (e.key === "Escape") { e.preventDefault(); closeSheet(); return; }
+      if (e.key === "Tab") { // keep the focus inside the open sheet
+        const sh = document.getElementById("daysheet"); if (!sh) return;
+        const f = sh.querySelectorAll("button"), first = f[0], last = f[f.length - 1], a = document.activeElement;
+        if (e.shiftKey && (a === first || a === sh)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+        else if (!sh.contains(a)) { e.preventDefault(); first.focus(); }
+      }
+      return;
+    }
+    const el = e.target; if (!el.classList || !el.classList.contains("calday") || e.altKey || e.ctrlKey || e.metaKey) return;
+    const cur = fromISO(el.dataset.d), dow = (cur.getDay() + 6) % 7;
+    let next = null;
+    if (e.key === "ArrowLeft") next = L.shift(cur, -1); else if (e.key === "ArrowRight") next = L.shift(cur, 1);
+    else if (e.key === "ArrowUp") next = L.shift(cur, -7); else if (e.key === "ArrowDown") next = L.shift(cur, 7);
+    else if (e.key === "Home") next = L.shift(cur, -dow); else if (e.key === "End") next = L.shift(cur, 6 - dow);
+    else if (e.key === "PageUp" || e.key === "PageDown") { const n = e.key === "PageUp" ? -1 : 1, last = new Date(cur.getFullYear(), cur.getMonth() + n + 1, 0).getDate(); next = new Date(cur.getFullYear(), cur.getMonth() + n, Math.min(cur.getDate(), last)); }
+    if (!next || next.getFullYear() < 1970 || next.getFullYear() > 2200) return;
+    e.preventDefault();
+    ui.calFocus = L.iso(next); ui.cal = { y: next.getFullYear(), m: next.getMonth() };
+    render(); focusDay(ui.calFocus);
+  });
+
   /* ───────── events ───────── */
   const acts = {
     tab: (el) => go(el.dataset.t),
@@ -854,6 +999,13 @@
     copybackup: () => { state.meta.lastBackup = new Date().toISOString(); const text = JSON.stringify(state), out = document.getElementById("backup-out"); if (!out) return; out.hidden = false; out.value = text; out.focus(); out.select(); markBackup();
       (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => flash("Copied. Paste it somewhere safe."), () => flash("Select the text and copy it.")); },
     importpaste: () => { const n = document.getElementById("backup-in"); restore(n ? n.value : ""); },
+    calview: (el) => { ui.calView = ["month", "week", "ahead"].includes(el.dataset.v) ? el.dataset.v : "month"; render(); },
+    calshift: (el) => { const c = calMonth(), n = Number(el.dataset.n) === -1 ? -1 : 1, d = new Date(c.y, c.m + n, 1); if (d.getFullYear() < 1970 || d.getFullYear() > 2200) return; ui.cal = { y: d.getFullYear(), m: d.getMonth() }; ui.calFocus = null; render(); },
+    weekshift: (el) => { const n = Number(el.dataset.n) === -7 ? -7 : 7; ui.calWeek = L.iso(L.shift(fromISO(ui.calWeek && isISO(ui.calWeek) ? ui.calWeek : todayISO()), n)); render(); },
+    caltoday: () => { const n = new Date(); ui.cal = { y: n.getFullYear(), m: n.getMonth() }; ui.calWeek = null; ui.calFocus = todayISO(); render(); focusDay(ui.calFocus); },
+    calday: (el) => { if (!isISO(el.dataset.d)) return; ui.calDay = el.dataset.d; ui.calFocus = el.dataset.d; ui.calOpener = focusKey(el); render(); const sh = document.getElementById("daysheet"); if (sh) { try { sh.focus({ preventScroll: true }); } catch (e) { sh.focus(); } } },
+    calstep: (el) => { if (!ui.calDay) return; const d = L.shift(fromISO(ui.calDay), Number(el.dataset.n) === -1 ? -1 : 1); if (d.getFullYear() < 1970 || d.getFullYear() > 2200) return; ui.calDay = ui.calFocus = L.iso(d); ui.cal = { y: d.getFullYear(), m: d.getMonth() }; if (ui.calView === "week") ui.calWeek = ui.calDay; render(); },
+    calclose: () => closeSheet(),
     erase1: () => { const b = document.getElementById("erase2"); if (b) { b.hidden = false; b.focus(); } },
     erase2: () => { dirty = false; clearTimeout(saveTimer); unreadable = null; try { localStorage.removeItem(KEY); localStorage.removeItem(KEY + "-unreadable"); } catch (e) { /* nothing stored */ } state = blank(); ui.mem = {}; ui.open = null; ui.day = null; go("today"); flash("Erased"); }
   };
@@ -873,6 +1025,9 @@
   root.addEventListener("change", (e) => {
     const el = e.target;
     if (el.dataset.toggle === "floorMode") { state.floorMode = !!el.checked; save(); render(); }
+    if (el.dataset.toggle === "sundayFeasts") { state.prefs.sundayFeasts = !!el.checked; save(); render(); }
+    if (el.id === "cal-region") { state.prefs.region = el.value === "nl" ? "nl" : "general"; save(); render(); flash("Calendar: " + L.REGIONS[state.prefs.region]); }
+    if (el.id === "cal-jump" && isISO(el.value)) { const d = fromISO(el.value); ui.cal = { y: d.getFullYear(), m: d.getMonth() }; ui.calFocus = el.value; render(); focusDay(el.value); }
     if (el.dataset.check) { setPath(el.dataset.check, !!el.checked); save(); }
     if (el.dataset.link) {
       const r = state.rule.find((x) => x.id === el.dataset.link); if (!r) return;
