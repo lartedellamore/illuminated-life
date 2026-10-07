@@ -557,7 +557,7 @@
       ${f.care ? `<p class="care">${esc(f.care)}</p>` : ""}
       <span class="rub">Examine</span><ul class="quest">${f.examine.map((q) => `<li>${esc(q)}</li>`).join("")}</ul>
       <span class="rub">The four movements</span>
-      <div class="moves">${MOVES.map((m) => `<div class="move"><div class="mh"><b>${m.name}</b><em>${m.verb}</em></div><p>${esc(m.ask)}</p>
+      <div class="moves">${MOVES.map((m) => `<div class="move"><div class="mh"><b>${m.name}</b><em>${m.verb}</em></div><p class="mverse"><i>${esc(m.verse.t)}</i> <span>${esc(m.verse.r)}</span></p><p>${esc(m.ask)}</p>
         <textarea class="in" rows="2" id="mv-${esc(f.id)}-${m.id}" data-bind="fields.${esc(f.id)}.${m.id}" placeholder="${esc(m.ph)}" aria-label="${m.name}: ${esc(f.name)}">${esc(r[m.id])}</textarea>
         ${m.id === "spend" ? `<div class="btnrow mt"><select class="in fix" id="cad-${esc(f.id)}" aria-label="How often" style="width:auto"><option value="daily">daily</option><option value="weekly" selected>weekly</option><option value="monthly">monthly</option></select><button class="pill gold" data-act="place" data-f="${esc(f.id)}">Place this in my Rule</button></div>` : ""}</div>`).join("")}</div>
       <span class="rub">The ladder</span>
@@ -989,7 +989,7 @@
       <p class="steward-line">${esc(IL.THREADS_LINE)}</p>
       <p><button class="link" data-act="gosteward">Write yours on the steward card</button></p>
       <h2 class="h2 mt">Four movements</h2><div class="prose"><p>They echo what the Lord did with bread: he took, blessed, broke and gave (Matthew 26:26). By baptism you share in Christ's priesthood, and your work, prayer, family life and rest become an offering joined to his (Catechism 901; Romans 12:1).</p></div>
-      <div class="moves">${MOVES.map((m) => `<div class="move"><div class="mh"><b>${m.name}</b><em>${m.verb}</em></div><p>${esc(m.ask)}</p><p class="note">${esc(m.prayer)}</p></div>`).join("")}</div>
+      <div class="moves">${MOVES.map((m) => `<div class="move"><div class="mh"><b>${m.name}</b><em>${m.verb}</em></div><p class="mverse"><i>${esc(m.verse.t)}</i> <span>${esc(m.verse.r)}</span></p><p>${esc(m.ask)}</p><p class="note">${esc(m.prayer)}</p></div>`).join("")}</div>
       <h2 class="h2 mt">Six laws</h2><div class="pane pad"><ol class="laws">${LAWS.map(([a, b]) => `<li><b>${esc(a)}</b>${esc(b)}</li>`).join("")}</ol></div>
       <h2 class="h2 mt">What the lamps do not show</h2><div class="pane lit pad prose"><p>A lit petal records a practice kept. It does not measure grace, and no one can read the state of their soul from a chart (Catechism 2005). Grave sin breaks communion with God, and what restores it is not a habit but the sacrament of Reconciliation.</p><p>The church, the rings, the movements and the rose are this app's way of arranging what the Church teaches. They are aids to memory, not doctrines.</p></div>`;
   }

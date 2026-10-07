@@ -58,16 +58,16 @@ IL.COLOUR_NOTE = "The three colours mark the three rings: ruby for the Person, s
 IL.LEVELS = ["Not yet begun", "Kindled", "Shining", "Burning", "Radiant"];
 
 IL.MOVES = [
-  { id: "receive", name: "Receive", verb: "He took", ask: "What have I been given here? Thank God for it by name.",
+  { id: "receive", verse: { t: "For who distinguisheth thee? Or what hast thou that thou hast not received? And if thou hast received, why dost thou glory, as if thou hadst not received it?", r: "1 Corinthians 4:7" }, name: "Receive", verb: "He took", ask: "What have I been given here? Thank God for it by name.",
     ph: "One sentence of thanks. This was not mine first.",
     prayer: "Lord, I did not make this and I did not earn it. Thank you." },
-  { id: "bless", name: "Bless", verb: "He blessed", ask: "What is this field for, and where does it stand among my loves?",
+  { id: "bless", verse: { t: "Seek ye therefore first the kingdom of God, and his justice, and all these things shall be added unto you.", r: "Matthew 6:33" }, name: "Bless", verb: "He blessed", ask: "What is this field for, and where does it stand among my loves?",
     ph: "What it is for. What it must never outrank.",
     prayer: "Lord, put this in its place beneath you." },
-  { id: "spend", name: "Spend", verb: "He broke", ask: "What one small practice will put it to work? Give it a time and a place.",
+  { id: "spend", verse: { t: "And calling his ten servants, he gave them ten pounds, and said to them: Trade till I come.", r: "Luke 19:13" }, name: "Spend", verb: "He broke", ask: "What one small practice will put it to work? Give it a time and a place.",
     ph: "A practice small enough for my worst week, with a time and a place.",
     prayer: "Lord, give me the courage to put it to work." },
-  { id: "ret", name: "Return", verb: "He gave", ask: "To whom is this given, and when will I review it before God?",
+  { id: "ret", verse: { t: "Who am I, and what is my people, that we should be able to promise thee all these things? All things are thine: and we have given thee what we received of thy hand.", r: "1 Chronicles 29:14" }, name: "Return", verb: "He gave", ask: "To whom is this given, and when will I review it before God?",
     ph: "Who receives this. The date I will look at it again.",
     prayer: "Lord, here is what you gave me, and what I did with it. Take both." }
 ];
