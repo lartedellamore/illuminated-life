@@ -153,6 +153,8 @@ p { margin: 0 0 1em; text-wrap: pretty; }
 .move .verb { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-ink); font-weight: 600; margin: 0; }
 .move h4 { font-size: 32px; line-height: 1.15; font-style: italic; margin: 2px 0 8px; }
 .move p:not(.verb) { font-size: 15px; color: var(--ink2); margin: 0; }
+.move p.mverse { font-family: var(--serif); font-size: 18px; line-height: 1.35; color: var(--ink); margin: 0 0 10px; }
+.move p.mverse span { display: block; font-family: var(--sans); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold-ink); margin-top: 3px; }
 
 /* book */
 .book { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(28px, 6vw, 72px); align-items: center; }

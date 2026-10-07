@@ -289,6 +289,8 @@ p { margin: 0 0 10px; }
 .move .mh b { font-family: var(--serif); font-size: 20px; font-weight: 500; }
 .move .mh em { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); font-style: normal; }
 .move p { font-size: 14px; color: var(--ink2); margin: 2px 0 8px; }
+.move .mverse { font-family: var(--serif); font-size: 17px; line-height: 1.35; color: var(--ink); margin: 4px 0 8px; }
+.move .mverse span { font-family: var(--sans); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-ink); white-space: nowrap; margin-left: 4px; }
 .quote { font-family: var(--serif); font-style: italic; font-size: 19px; margin: 14px 0 4px; padding-left: 14px; border-left: 2px solid var(--gold-pale); color: var(--ink2); }
 .quote cite { display: block; font-style: normal; font-family: var(--sans); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-ink); margin-top: 6px; }
 
