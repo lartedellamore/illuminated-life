@@ -1,10 +1,10 @@
 # Illuminated Life
 
-A Catholic rule of life across twelve fields of stewardship: a website, the book *Illuminated: The Image of God, Embodied* (62 pages, PDF), and its companion app.
+For a virtuous lifestyle rooted in the holiness of Christ. A Catholic rule of life in eight fields, 0 to 7: a website, the book *Illuminated: The Image of God, Embodied* (PDF), and its companion app, a digital chapel.
 
 Live: https://app.lartedellamore.com/ (the app itself is at /app.html)
 
-> One Master entrusts one steward with twelve fields in three rings:
+> One Master entrusts one steward with eight fields in three rings:
 > Eight fields, 0 to 7: 0 Soul and Holiness at the centre; the Person (1 Body and Mind, 2 Heart and Relationships); the Household (3 Home and Stewardship, 4 Work); the World (5 Creation, 6 Mission, 7 Vocation).
 > In every field the same four movements take place: **receive, bless, spend, return.**
 
@@ -12,8 +12,8 @@ Live: https://app.lartedellamore.com/ (the app itself is at /app.html)
 
 | Screen | What you do there |
 | --- | --- |
-| **Today** | See the rose window (twelve petals, one per field), your field for the season, and today's practices. Floor mode reduces the day to three lines for hard weeks. |
-| **Fields** | Open any of the twelve fields: what it is for, its disorder, questions to examine, the four movements, and a ladder of four rungs. |
+| **Today** | See the rose window (seven petals around a gold centre, one per field), your field for the season, and today's practices. Floor mode reduces the day to three lines for hard weeks. |
+| **Fields** | Open any of the eight fields: what it is for, its disorder, questions to examine, the four movements, and a ladder of four rungs. |
 | **Rule** | Your floor, your daily, weekly, monthly and yearly practices, your parish and your three people, and the precepts of the Church. Export to your calendar or print as a booklet. |
 | **Diary** | Seven things you are grateful for, three you are praying for, one act of service, and where you saw light. Save it as a PDF. The evening Examen lives here too. |
 | **More** | The Steward's Model, the season review, the Church's year (the whole General Roman Calendar), the Treasury, prayers, and backup. |
@@ -87,7 +87,7 @@ The app is not a spiritual director, a confessor or a diagnosis.
 
 ## Colours
 
-The twelve fields are colour-coded by ring: ruby for the Person, sapphire for the Household, emerald for the World. Gold is kept for the centre. These are a memory aid and are not liturgical colours. The calendar uses the liturgical colours of the day, shown as small dots.
+Each field has its own colour, the same as its folder in Finder, its Notes folder and its calendar: gold for 0 Soul and Holiness, then green, red, blue, purple, orange, grey and yellow for 1 to 7. These are a memory aid and are not liturgical colours. The calendar uses the liturgical colours of the day, shown as small dots.
 
 ## The Guide, the Icon Screen and My day
 
@@ -100,7 +100,7 @@ The twelve fields are colour-coded by ring: ruby for the Person, sapphire for th
 
 - `book/illuminated.pdf`: the book, typeset.
 - `book/illuminated.md`: the book's text as Markdown.
-- `guides/a-home-for-everything.pdf`: the setup plan for the twelve fields on a laptop and phone.
+- `guides/a-home-for-everything.pdf`: the setup plan for the fields on a laptop and phone.
 
 ## Diary photographs
 

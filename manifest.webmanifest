@@ -1,7 +1,7 @@
 {
   "name": "Illuminated Life",
   "short_name": "Illuminated",
-  "description": "For a holy and virtuous life rooted in Christ. A Catholic rule of life across twelve fields of stewardship.",
+  "description": "For a virtuous lifestyle rooted in the holiness of Christ. A Catholic rule of life in eight fields, 0 to 7.",
   "start_url": "app.html",
   "scope": ".",
   "display": "standalone",
