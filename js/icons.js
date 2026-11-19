@@ -206,17 +206,17 @@ window.IL = window.IL || {};
     { id: "pride", name: "Pride", is: "Placing oneself at the centre: needing to be right, or to be seen.",
       virtue: "Humility", practice: { title: "Once a day, let someone else be right, or leave a good deed unmentioned", field: "heart", cadence: "day" } },
     { id: "avarice", name: "Avarice", is: "Looking to money and possessions for the safety that only God gives.",
-      virtue: "Generosity", practice: { title: "Each week, give something away before I count what is left", field: "money", cadence: "week" } },
+      virtue: "Generosity", practice: { title: "Each week, give something away before I count what is left", field: "home", cadence: "week" } },
     { id: "envy", name: "Envy", is: "Sadness at another person's good.",
       virtue: "Kindness and gratitude", practice: { title: "Each day, thank God by name for one good thing that belongs to someone else", field: "heart", cadence: "day" } },
     { id: "wrath", name: "Wrath", is: "Anger that has slipped the rein of love and of justice.",
-      virtue: "Patience and meekness", practice: { title: "When anger rises, ten slow breaths before I answer", field: "speech", cadence: "day" } },
+      virtue: "Patience and meekness", practice: { title: "When anger rises, ten slow breaths before I answer", field: "creation", cadence: "day" } },
     { id: "lust", name: "Lust", is: "Using persons, in thought or in act, for one's own comfort.",
-      virtue: "Chastity", practice: { title: "Each evening, the phone outside the bedroom, and a prayer by name for the people I met today", field: "body", cadence: "day" } },
+      virtue: "Chastity", practice: { title: "Each evening, the phone outside the bedroom, and a prayer by name for the people I met today", field: "bodymind", cadence: "day" } },
     { id: "gluttony", name: "Gluttony", is: "Using food, drink or other pleasure to numb or to fill.",
-      virtue: "Temperance", practice: { title: "One meal a day seated and unhurried, with grace said, stopping at enough", field: "body", cadence: "day" } },
+      virtue: "Temperance", practice: { title: "One meal a day seated and unhurried, with grace said, stopping at enough", field: "bodymind", cadence: "day" } },
     { id: "sloth", name: "Sloth", also: "acedia", is: "Heaviness toward the good, and above all toward God. The tradition also calls it acedia.",
-      virtue: "Diligence", practice: { title: "The first duty of the day at its set time, for five minutes, before anything else", field: "time", cadence: "day" } }
+      virtue: "Diligence", practice: { title: "The first duty of the day at its set time, for five minutes, before anything else", field: "home", cadence: "day" } }
   ];
   ICONO.shadow = {
     scenarios: [

@@ -107,13 +107,13 @@
         { kind: "anchor", title: "Two minutes of prayer before sleep", time: night(10), note: "Give thanks for one thing. Then stop.", field: "soul" }]
       : [{ kind: "anchor", title: "Morning offering", time: fromMin(wake + 10), note: "Before the phone. Offer the day.", field: "soul" },
         { kind: "anchor", title: "Midday pause", time: midday, note: "The Angelus, or one breath and a word.", field: "soul" },
-        { kind: "anchor", title: "Evening examen", time: night(30), note: "Five minutes, in God's presence, before sleep.", field: "time" }];
+        { kind: "anchor", title: "Evening examen", time: night(30), note: "Five minutes, in God's presence, before sleep.", field: "soul" }];
     (COMPANION_AT[a.companion] || []).forEach((where) => { anchors[where === "first" ? 0 : anchors.length - 1].companion = a.companion; });
     const weekly = [{ kind: "mass", title: "Sunday Mass", weekday: 0, note: "Let the week bend around it.", field: "soul" },
-      { kind: "rest", title: "The day of rest", weekday: a.restDay, note: "One day in which nothing is produced.", field: "time" },
+      { kind: "rest", title: "The day of rest", weekday: a.restDay, note: "One day in which nothing is produced.", field: "home" },
       { kind: "hour", title: "One unhurried hour with someone who knows me", weekday: a.hourDay, time: a.hourTime, note: "In person, in the calendar.", field: "heart" }];
     const monthly = [], yearly = [];
-    if (e.band === "ordered") weekly.push({ kind: "open", title: "One unoptimised hour", note: "Nothing planned. Accept interruptions as visits.", field: "time" });
+    if (e.band === "ordered") weekly.push({ kind: "open", title: "One unoptimised hour", note: "Nothing planned. Accept interruptions as visits.", field: "home" });
     if (a.field && a.spend) {
       const f = FIELDS.find((x) => x.id === a.field);
       (a.spendCad === "daily" ? anchors : weekly).push({ kind: "practice", title: a.spend, time: a.spendTime, note: a.place ? "Where: " + a.place : f.name, field: a.field });
@@ -121,7 +121,7 @@
     if (a.service) (a.serviceCad === "monthly" ? monthly : weekly).push({ kind: "service", title: a.service, note: "Small enough to keep.", field: "mission" });
     const interval = a.interval || (CONF.find((c) => c[0] === a.conf) || [])[2] || "each season";
     (interval === "each season" ? yearly : monthly).push({ kind: "confession", title: "Confession", interval, note: "A date kept, not a crisis.", field: "soul" });
-    if (a.field === "money") monthly.push({ kind: "money", title: "One hour with the figures", note: "What came in, what went out, what was given.", field: "money" });
+    if (a.field === "home") monthly.push({ kind: "money", title: "One hour with the figures", note: "What came in, what went out, what was given.", field: "home" });
     const note = [];
     if (small) note.push("I have kept this as small as it can be. " + SMALL_LINE + (heavy ? " The people who depend on you are already part of your rule." : ""));
     if (e.band === "ordered") note.push("Your Icon Screen showed an ordered house. You do not need more structure. I have added one unoptimised hour a week. Show this Rule to a director, and let that person tell you things.");
@@ -136,11 +136,11 @@
   // Nor may a draft score or grade the person.
   const SCORING = /\b(scored?|scoring|graded?|grading|rated|rating|out of (?:ten|five|\d+)|\d+\s*\/\s*\d+)\b/i;
   const KINDS = { daily: ["anchor", "practice"], weekly: ["mass", "rest", "hour", "practice", "service", "open"], monthly: ["confession", "money", "practice", "service"], yearly: ["confession", "service"] };
-  const KIND_FIELD = { mass: "soul", rest: "time", hour: "heart", service: "mission", money: "money", confession: "soul", open: "time" };
+  const KIND_FIELD = { mass: "soul", rest: "home", hour: "heart", service: "mission", money: "home", confession: "soul", open: "home" };
 
   // Turns anything into a well-formed proposal. Types, lengths, field ids, times and kinds are checked; everything
   // else is dropped. The size is capped: three daily anchors, one new practice for the season's field, Sunday Mass,
-  // the day of rest, the weekly hour, one confession interval, one service, a finance hour only when Finance is the
+  // the day of rest, the weekly hour, one confession interval, one service, a finance hour only when Home and Stewardship is the
   // field, one unoptimised hour only for the ordered house. env: { source, band, day }.
   function sanitise(raw, env) {
     const r = obj(raw), e = env || {}, strict = e.source === "claude", shape = Object.assign({}, DEFAULT_SHAPE, obj(e.day)), seen = {};
@@ -151,7 +151,7 @@
       const o = obj(x), kind = cad === "daily" && !o.kind ? "anchor" : o.kind;
       if (!KINDS[cad].includes(kind)) return null;
       const title = kind === "confession" ? "Confession" : txt(o.title, 120); if (!title) return null;
-      if ((kind === "practice" && !seasonField) || (kind === "money" && seasonField !== "money") || (kind === "open" && e.band !== "ordered")) return null;
+      if ((kind === "practice" && !seasonField) || (kind === "money" && seasonField !== "home") || (kind === "open" && e.band !== "ordered")) return null;
       seen[kind] = (seen[kind] || 0) + 1; if (seen[kind] > (kind === "anchor" ? 3 : 1)) return null;
       const out = { kind, title, time: kind === "confession" || kind === "rest" ? "" : isTime(o.time) ? o.time : "", note: txt(o.note, 160),
         field: kind === "practice" ? seasonField : KIND_FIELD[kind] || pick(o.field, FIELD_IDS) || "soul" };
@@ -258,7 +258,7 @@
         return frame(dr, "Which field may God be asking about this season?", `<p class="glead">One field only. In the other eleven, the ordinary duties still hold.</p>`,
           `${dim ? `<div class="pane quiet pad" id="g-dim"><p class="sub">Your dimmest light is in ${fname(dim)}. Often that is the field.</p><div class="btnrow mt"><button class="pill" data-act="gpick" data-k="field" data-v="${esc(dim.id)}" aria-pressed="${a.field === dim.id}">Choose ${esc(dim.name)}</button></div></div>` : ""}
            ${ic ? `<div class="pane quiet pad" id="g-icon"><span class="rub">From your Icon Screen</span><p class="sub"><b>${esc(ic.tone.band)}.</b> ${esc(ic.tone.text)}</p><p class="sub">It suggested asking for ${esc(ic.ask.name.toLowerCase())}, and this for Mission: ${esc(ic.mission.title)}.</p></div>` : ""}
-           <div class="chipgrid" role="group" aria-label="The twelve fields. Choose one.">${FIELDS.map((f) => chip("field", f.id, `<span class="fnum">${f.n}</span> ${esc(f.name)}`, a.field === f.id, "fchip " + rc(f.id))).join("")}</div>`); }
+           <div class="chipgrid" role="group" aria-label="The fields, 0 to 7. Choose one.">${FIELDS.map((f) => chip("field", f.id, `<span class="fnum">${f.n}</span> ${esc(f.name)}`, a.field === f.id, "fchip " + rc(f.id))).join("")}</div>`); }
       if (s === "moves") { const f = fieldById(a.field);
         return frame(dr, "Four lines for " + f.name + ".", `<p class="glead">${esc(f.end)}</p>`,
           `${MOVES.map((m) => `<label class="fieldset"><span class="lab">${m.name} · ${esc(m.ask)}</span><textarea class="in" id="g-${m.id}" rows="2" maxlength="300" data-bind="guide.draft.a.${m.id}" placeholder="${esc(m.ph)}">${esc(a[m.id])}</textarea></label>
@@ -534,7 +534,7 @@
     }
     function Calendar() {
       const S = st(), ev = ctx.calendarEvents({ feasts: true }), mine = ev.filter((e) => e.kind === "practice"), n = (cad) => mine.filter((e) => e.cadence === cad).length;
-      const rv = ev.find((e) => e.kind === "review"), feasts = ev.filter((e) => e.kind === "feast").length, can = ctx.canSave();
+      const rv = ev.find((e) => e.kind === "review"), feasts = ev.filter((e) => e.kind === "feast").length, can = ctx.canSave(), byField = ctx.makeICSByField({ feasts: S.prefs.icsFeasts });
       const count = (k, one, many) => (k ? `<li>${k === 1 ? one : k + " " + many}</li>` : "");
       return `<h1 class="h1">Into my calendar</h1><p class="lede">There is only one life, so use your one calendar.</p>
         <div class="pane quiet pad" id="cal-honest"><p style="margin:0">This app cannot see or change your Apple or Google calendar. It can hand your Rule to your calendar as a file, and you can do that again whenever your Rule changes.</p></div>
@@ -544,11 +544,12 @@
             <li>The season review, on ${esc(ctx.pretty(rv.date))} and every ninety days after</li>${ev.some((e) => e.kind === "baptism") ? `<li>The anniversary of your Baptism</li>` : ""}</ul>
           <label class="check"><input type="checkbox" id="cal-feasts" data-check="prefs.icsFeasts" ${S.prefs.icsFeasts ? "checked" : ""}><span>Also the ${feasts} principal feasts of the next twelve months</span></label>
           <p class="note">Nothing blocks your time: every event is marked as free. Whole days are drawn as banners.</p>
-          ${can ? `<div class="btnrow mt"><button class="gold-btn" data-act="ics">Put everything in my calendar</button><button class="pill" data-act="icsday">My day as a calendar file</button></div>
+          ${can ? `<div class="btnrow mt"><button class="gold-btn" data-act="icsfields">One file for each field, 0 to 7</button><button class="pill" data-act="ics">Everything in one file</button><button class="pill" data-act="icsday">My day as a calendar file</button></div>
+            <p class="note mt">One file for each field: ${byField.map((f) => esc(f.name.replace(/\.ics$/, ""))).join(" · ")}. Each file is named after its field, so on the phone you can put it into the calendar with the same number.</p>
             ${ctx.PREVIEW ? `<p class="note mt">Here inside Claude, the calendar file is saved inside a zip, because Claude does not pass calendar files on. Open the zip, then open the file inside it.</p>` : ""}`
             : `<p class="note mt">In the full app you can save this file. Here it cannot be saved.</p>`}</div>
         <h2 class="h2 mt">How to open the file</h2>
-        <details class="pane help" id="help-apple"><summary>On iPhone, iPad or Mac</summary><ol class="plain"><li>Tap <b>Put everything in my calendar</b>. The file is saved on your device.</li><li>Open the file. On iPhone it is in Files, under Downloads.</li><li>Choose <b>Add All</b>.</li><li>Pick a calendar, then confirm.</li></ol><p class="note">A calendar of its own, named Illuminated Life, keeps the Rule easy to hide or remove.</p></details>
+        <details class="pane help" id="help-apple"><summary>On iPhone, iPad or Mac</summary><ol class="plain"><li>Tap <b>One file for each field, 0 to 7</b>. The files are saved on your device.</li><li>Open each file. On iPhone they are in Files, under Downloads.</li><li>Choose <b>Add All</b>.</li><li>Pick the calendar with the same number (0 Soul and Holiness, 1 Body and Mind, and so on), then confirm. If you do not have those calendars yet, make them once in Calendar, each in its own colour.</li></ol><p class="note">A calendar of its own, named Illuminated Life, keeps the Rule easy to hide or remove.</p></details>
         <details class="pane help" id="help-google"><summary>In Google Calendar</summary><ol class="plain"><li>On a computer, open Google Calendar. The phone app cannot import a file.</li><li>Make a calendar named <b>Illuminated Life</b>: Settings, Add calendar, Create new calendar.</li><li>Open Settings, then <b>Import &amp; export</b>, then <b>Import</b>.</li><li>Choose the file, choose the calendar Illuminated Life, and press Import.</li></ol></details>
         <div class="pane pad" id="cal-again"><span class="rub">When your Rule changes</span><p class="sub">Save the file again and open it. Each event keeps the same hidden name, so Apple Calendar and Outlook usually update what they already have.</p>
           <p class="sub mt">Google Calendar may add the events a second time. That is why a separate calendar named Illuminated Life helps: delete that calendar, make it again, and import the new file.</p></div>
@@ -590,7 +591,7 @@
       ].join("\n");
     }
     const draftAsk = () => ["Now draft the Rule from this conversation. Reply with only one JSON object and no other text, in exactly this shape:", SCHEMA,
-      "Rules for the JSON: at most three anchors (daily, with times set beside waking and bedtime); in weekly, at most one item of each kind (mass is Sunday Mass, rest is the day of rest, hour is one hour with someone in person, practice is the one new practice for the season's field, service is one act of service); weekday is 0 for Sunday to 6 for Saturday; one confession item, in monthly or yearly, with its interval; a money item only if seasonField is \"money\"; seasonField is one of: " + FIELD_IDS.join(", ") + "; times are 24-hour HH:MM; every text is one short plain sentence; nothing about fasting, food or body measurements; no scores. Leave out anything the person did not want."].join("\n");
+      "Rules for the JSON: at most three anchors (daily, with times set beside waking and bedtime); in weekly, at most one item of each kind (mass is Sunday Mass, rest is the day of rest, hour is one hour with someone in person, practice is the one new practice for the season's field, service is one act of service); weekday is 0 for Sunday to 6 for Saturday; one confession item, in monthly or yearly, with its interval; a money item only if seasonField is \"home\"; seasonField is one of: " + FIELD_IDS.join(", ") + "; times are 24-hour HH:MM; every text is one short plain sentence; nothing about fasting, food or body measurements; no scores. Leave out anything the person did not want."].join("\n");
     const chatEnd = () => { const el = document.getElementById("chat-end"); if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" }); };
     function chatFail(e, userText) {
       const c = g.chat, code = e && typeof e === "object" ? e.code : "";

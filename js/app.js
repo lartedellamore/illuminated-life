@@ -51,7 +51,8 @@
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"'`]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;", "`": "&#96;" }[c]));
   const uid = () => Math.random().toString(36).slice(2, 9) || "r" + Date.now();
   const todayISO = () => L.iso(new Date());
-  const fieldById = (id) => FIELDS.find((f) => f.id === id);
+  const fieldById = (id) => IL.fieldById(id);
+  const canonField = (id) => { const f = fieldById(id); return f ? f.id : ""; };
   const compById = (id) => COMPANIONS.find((c) => c.id === id);
   const fmt = (d, o) => d.toLocaleDateString(LOCALE, o);
   const pretty = (d) => fmt(d, { day: "numeric", month: "long" });
@@ -161,9 +162,16 @@
       const lvl = Math.round(Number(r.level)); out.level = lvl >= 0 && lvl <= 4 ? lvl : 0;
       FIELD_KEYS.forEach((k) => { out[k] = str(r[k]); });
     });
+    // A save made with the twelve fields: each old field flows into its new one. The light keeps its brightest level; words are kept, not lost.
+    Object.keys(IL.FIELD_ALIAS).forEach((old) => {
+      const r = obj(sf[old]); if (!Object.keys(r).length) return;
+      const out = base.fields[IL.FIELD_ALIAS[old]], lvl = Math.round(Number(r.level));
+      if (lvl > out.level && lvl <= 4) out.level = lvl;
+      FIELD_KEYS.forEach((k) => { const v = str(r[k]).trim(); if (v && !out[k].includes(v)) out[k] = (out[k] ? out[k] + "\n" : "") + v; });
+    });
 
     const fo = obj(src.focus);
-    base.focus = fieldById(fo.field) && isISO(fo.since) ? { field: fo.field, since: fo.since } : null;
+    base.focus = fieldById(fo.field) && isISO(fo.since) ? { field: canonField(fo.field), since: fo.since } : null;
 
     if (Array.isArray(src.rule)) {
       const seen = {};
@@ -176,7 +184,7 @@
         const companion = r.companion === "custom" ? (link ? "custom" : "") : compById(r.companion) ? r.companion : "";
         return {
           id, cadence, text, time: typeof r.time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(r.time) ? r.time : "",
-          note: str(r.note, 300), field: fieldById(r.field) ? r.field : "",
+          note: str(r.note, 300), field: canonField(r.field),
           done: typeof r.done === "string" && /^[0-9W-]{4,10}$/.test(r.done) ? r.done : null,
           companion, link: companion === "custom" ? link : "",
           weekday: cadence === "weekly" && Number.isInteger(r.weekday) && r.weekday >= 0 && r.weekday <= 6 ? r.weekday : ""
@@ -351,39 +359,39 @@
   };
   const icon = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="${n === "more" ? 2.6 : 1.5}" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n] || ICONS.spark}"/></svg>`;
   // Ring colours: every field takes the colour of its ring. Gold stays with the centre.
-  const rc = (fieldId) => { const R = IL.ringOf(fieldId); return R ? "rc-" + R.colour : ""; };
+  const rc = (fieldId) => { const f = fieldById(fieldId); return f ? "rc-f" + f.n : ""; };
   const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);
   const upper = (s) => esc(s.charAt(0).toUpperCase() + s.slice(1));
   // A field's badge (third argument) takes its ring colour; other badges stay blue or gold.
   const badge = (n, gold, fieldId) => `<span class="badge ${fieldId && rc(fieldId) ? rc(fieldId) : gold ? "gold" : ""}">${icon(n)}</span>`;
   const fname = (f) => `<span class="fname ${rc(f.id)}">${esc(f.name)}</span>`;
-  const ringLegend = () => `<ul class="legend" aria-label="What the colours mean">${RINGS.map((R) => `<li><i class="sw rc-${R.colour}" aria-hidden="true"></i><span><b>${R.name}</b> · ${esc(R.sub)}</span></li>`).join("")}<li><i class="sw centre" aria-hidden="true"></i><span><b>${IL.CENTRE.name}</b> · ${esc(IL.CENTRE.sub)}</span></li></ul>`;
+  const ringLegend = () => `<ul class="legend" aria-label="What the colours mean">${FIELDS.map((f) => `<li><i class="sw ${f.n === "0" ? "centre" : rc(f.id)}" aria-hidden="true"></i><span><b>${f.n} · ${esc(f.name)}</b></span></li>`).join("")}</ul>`;
   const ringSub = (R) => `<span class="ringsub"> · ${esc(R.sub)}</span>`;
 
-  /* ───────── the rose window: twelve petals, numbered like the hours ─────────
+  /* ───────── the rose window: the soul at the centre, seven petals around it ─────────
      One image for assistive technology. The same fields are an ordinary list on the Fields screen. */
   function roseLabel() {
     const lit = FIELDS.filter((f) => state.fields[f.id].level > 0);
     const F = state.focus ? fieldById(state.focus.field) : null;
-    return "The twelve fields, drawn as a rose window. " +
+    return "The fields, 0 to 7, drawn as a rose window: the soul at the centre, seven petals around it. " +
       (lit.length ? "Lit: " + lit.map((f) => f.name + ", " + LEVELS[state.fields[f.id].level].toLowerCase()).join("; ") + ". " : "No field is lit yet. ") +
-      (lit.length && lit.length < 12 ? (12 - lit.length) + " not yet begun. " : "") +
+      (lit.length && lit.length < FIELDS.length ? (FIELDS.length - lit.length) + " not yet begun. " : "") +
       (F ? "This season's field: " + F.name + "." : "");
   }
   function rose() {
     const pt = (r, deg) => { const a = (deg * Math.PI) / 180; return [100 + r * Math.sin(a), 100 - r * Math.cos(a)]; };
-    const arc = (from, to, R) => { const [x1, y1] = pt(92, from), [x2, y2] = pt(92, to); return `<path class="arc rc-${R.colour}" d="M${x1.toFixed(1)} ${y1.toFixed(1)}A92 92 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}"/>`; };
     const petal = "M100 32C111 45 111 63 100 78C89 63 89 45 100 32Z";
-    const petals = FIELDS.map((f, i) => {
-      const deg = (i + 1) * 30, lvl = state.fields[f.id].level, [nx, ny] = pt(78, deg);
+    const ring = FIELDS.filter((f) => f.n !== "0"), soul = fieldById("soul"), soulLvl = state.fields.soul.level, soulFocus = state.focus && state.focus.field === "soul" ? 1 : 0;
+    const petals = ring.map((f, i) => {
+      const deg = (i * 360) / ring.length, lvl = state.fields[f.id].level, [nx, ny] = pt(78, deg);
       const focus = state.focus && state.focus.field === f.id ? 1 : 0;
       return `<g class="p ${rc(f.id)}" data-act="gofield" data-f="${esc(f.id)}" data-focus="${focus}">
         <g transform="rotate(${deg} 100 100)"><path class="petal-line" d="${petal}"/><path class="petal-fill" d="${petal}" style="opacity:${lvl / 4}"/></g>
         <text class="num" x="${nx.toFixed(1)}" y="${(ny + 3.2).toFixed(1)}" text-anchor="middle">${f.n}</text></g>`;
     }).join("");
     return `<div class="rosewrap"><svg class="rose" viewBox="0 0 200 200" role="img" aria-label="${esc(roseLabel())}">
-      <circle class="ring" cx="100" cy="100" r="86"/>${arc(19, 131, RINGS[0])}${arc(139, 251, RINGS[1])}${arc(259, 371, RINGS[2])}
-      ${petals}<circle class="halo" cx="100" cy="100" r="17"/><circle class="core" cx="100" cy="100" r="10"/></svg>${ringLegend()}</div>`;
+      <circle class="ring" cx="100" cy="100" r="86"/>
+      ${petals}<g class="p rc-f0" data-act="gofield" data-f="soul" data-focus="${soulFocus}"><circle class="halo" cx="100" cy="100" r="19" style="opacity:${0.12 + 0.2 * soulLvl}"/><circle class="core" cx="100" cy="100" r="10"/><text class="num" x="100" y="121.5" text-anchor="middle">${soul.n}</text></g></svg>${ringLegend()}</div>`;
   }
 
   /* ───────── shared pieces ───────── */
@@ -471,17 +479,17 @@
       if (state.prefs.todayView === "day") return h + G.day() + `</section>`;
     }
     h += `<div class="pane quiet rosepane">${rose()}
-        <div><span class="rub">Twelve fields, one steward</span>
+        <div><span class="rub">Eight fields, one steward</span>
           <h2 class="h2">${F ? "This season: " + esc(F.name) : "Everything you hold, on one page"}</h2>
-          <p class="sub">Each petal is a field, numbered like the hours. A petal brightens as its practices are kept. It records practice. It does not measure grace or the state of your soul.</p>
+          <p class="sub">Each petal is a field, 1 to 7, with the soul at the centre as 0. A petal brightens as its practices are kept. It records practice. It does not measure grace or the state of your soul.</p>
           <p class="mt"><button class="link" data-act="tab" data-t="fields">Open the fields</button></p></div></div>`;
 
     if (!started && !ui.later.begin) {
       h += `<div class="pane lit pad"><span class="rub">Begin here</span><h2 class="h2">Three small steps</h2>
         <ol class="plain"><li><b>Pray first.</b> Ask to see what you have been given, and where you are being asked.</li>
-        <li><b>Walk the twelve fields.</b> A quick, honest glance at each.</li>
+        <li><b>Walk the fields, 0 to 7.</b> A quick, honest glance at each.</li>
         <li><b>Choose one field</b> for this season. Add nothing new in the other eleven. Their ordinary duties still hold.</li></ol>
-        <div class="btnrow mt"><button class="gold-btn" data-act="sub" data-s="review">Walk the twelve fields</button>
+        <div class="btnrow mt"><button class="gold-btn" data-act="sub" data-s="review">Walk the fields</button>
         <button class="pill gold" data-act="toggleprayer" aria-expanded="${ui.showPrayer ? "true" : "false"}">${ui.showPrayer ? "Hide the prayer" : "A prayer to begin"}</button>
         <button class="pill" data-act="later" data-k="begin">Later</button></div>
         ${ui.showPrayer ? `<p class="vtext sm">Lord, show me what you have given me, and where you are asking. Make me faithful in the field I have been avoiding. Amen.</p>` : ""}</div>`;
@@ -492,7 +500,7 @@
         <span class="rowtext"><b><span class="fnum ${rc(F.id)}">${F.n}</span> · ${esc(F.name)} · day ${day} of about ninety</b>
         <span>${r.spend ? "Spend: " + esc(r.spend) : "Write its four movements: receive, bless, spend, return."}</span>
         ${r.act ? `<span>Next act: ${esc(r.act)}</span>` : ""}</span>${icon("chev", 18)}</button>
-        ${day >= 90 && !ui.later.season ? `<div class="pane lit pad"><span class="rub">The season is complete</span><p>Ninety days with one field. Give thanks, look again at the twelve, and ask which field is next.</p><div class="btnrow"><button class="gold-btn" data-act="sub" data-s="review">Review the season</button><button class="pill" data-act="later" data-k="season">Later</button></div></div>` : ""}`;
+        ${day >= 90 && !ui.later.season ? `<div class="pane lit pad"><span class="rub">The season is complete</span><p>Ninety days with one field. Give thanks, look again at the eight, and ask which field is next.</p><div class="btnrow"><button class="gold-btn" data-act="sub" data-s="review">Review the season</button><button class="pill" data-act="later" data-k="season">Later</button></div></div>` : ""}`;
     }
 
     const years = baptismYears(now);
@@ -571,11 +579,14 @@
     return h;
   }
   function Fields() {
-    return `<section class="stack"><h1 class="h1">The Twelve Fields</h1>
-      <p class="lede">Everything you have been given, in three rings. God ordinarily asks about one field at a time.</p>
+    const C = IL.CENTRE;
+    return `<section class="stack"><h1 class="h1">The Fields, 0 to 7</h1>
+      <p class="lede">The soul at the centre, and seven fields around it. God ordinarily asks about one field at a time.</p>
       ${ringLegend()}
       <p><button class="link" data-act="sub" data-s="model">How the model works</button></p>
-      ${RINGS.map((R) => `<div class="ringhead rc-${R.colour}"><span class="rub">${R.says} · ${R.hours}</span><h2 class="h2"><i class="sw" aria-hidden="true"></i>${R.name}${ringSub(R)}</h2><p class="sub">${esc(R.gloss)}</p></div>
+      <div class="ringhead rc-f0"><span class="rub">${esc(C.says)} · 0</span><h2 class="h2"><i class="sw centre" aria-hidden="true"></i>${esc(C.name)}<span class="ringsub"> · ${esc(C.sub)}</span></h2><p class="sub">Christ is the lamp, and the soul is the sanctuary where he dwells. Every other field is lit from here.</p></div>
+      ${fieldCard(fieldById("soul"))}
+      ${RINGS.map((R) => `<div class="ringhead"><span class="rub">${R.says} · ${R.hours}</span><h2 class="h2">${R.name}${ringSub(R)}</h2><p class="sub">${esc(R.gloss)}</p></div>
         ${FIELDS.filter((f) => f.ring === R.id).map(fieldCard).join("")}`).join("")}</section>`;
   }
 
@@ -586,7 +597,7 @@
     const head = (t) => `<h3 class="h3">${esc(t.name)}<span class="ringsub"> · ${esc(t.says)}</span></h3><p class="sub">${esc(t.text)}</p>`;
     const chips = latest ? latest.charisms.map((id) => ICONO.charisms.find((c) => c.id === id).name).concat(sum.awake.map((id) => ICONO.gifts.find((g) => g.id === id).name)) : [];
     return `<h2 class="h2 mt" id="steward">The steward</h2>
-      <div class="pane pad steward"><p class="sub">Three threads run through all twelve fields. Write here what is true of you. All of it is optional.</p>
+      <div class="pane pad steward"><p class="sub">Three threads run through all the fields. Write here what is true of you. All of it is optional.</p>
         <div class="thread">${head(T[0])}
           <div class="frow mt"><label class="fieldset"><span class="lab">The date of my Baptism</span><input class="in" type="date" id="st-baptism" data-bind="steward.baptism" value="${esc(isISO(S.baptism) ? S.baptism : "")}" max="${esc(todayISO())}"></label>
             ${input("steward.patron", S.patron, "e.g. St Willibrord", "My patron saint")}</div>
@@ -926,9 +937,9 @@
   /* ───────── More ───────── */
   const MORE = [
     ...(GUIDE ? [["guide", "The Guide", "Plain questions that build a first Rule and a plan for the day", "guide"]] : []),
-    ["model", "The Steward's Model", "Lamp, temple, house, field. Twelve fields, four movements, six laws", "spark"],
+    ["model", "The Steward's Model", "Lamp, temple, house, field. Eight fields, 0 to 7, four movements, six laws", "spark"],
     ["icon", "The Icon Screen", "A mirror in five panels: where you are, what you were given, what it is for", "lamp"],
-    ["review", "Season review", "Walk the twelve fields and choose one", "grid"],
+    ["review", "Season review", "Walk the fields, 0 to 7, and choose one", "grid"],
     ["year", "The Church's year", "The whole calendar, day by day", "calendar"],
     ...(GUIDE ? [["calendar", "Into my calendar", "Hand your Rule to Apple, Google or Outlook as a file", "send"]] : []),
     ["treasury", "The Treasury", "First fruits, and an order for the rest", "coin"],
@@ -972,19 +983,19 @@
   function Model() {
     const P = IL.PICTURE, C = IL.CHRIST;
     return `<h1 class="h1">The Steward's Model</h1>
-      <p class="lede">One Lord at the centre. One steward. Twelve fields in three rings. In every field the same four movements.</p>
+      <p class="lede">One Lord at the centre. One steward. Eight fields, numbered 0 to 7: the soul at the centre and seven around it, in three rings. In every field the same four movements.</p>
       <div class="pane quiet pad picture"><span class="rub center">The picture of the model</span><h2 class="h2 center">${esc(P.title)}</h2>
         ${churchPicture()}
         <p class="pictext">${esc(P.text)}</p>
         ${ringLegend()}
-        <p class="note center">The Lamb is its lamp (${esc(IL.CENTRE.subRef)}). ${RINGS.map((R) => upper(R.sub) + ": " + esc(R.subRef)).join(". ")}.</p></div>
-      <div class="pane quiet rosepane">${rose()}<div><span class="rub">Read it like a clock</span><p class="sub">The same model, drawn as a rose window. Hours I to IV are the Person: what I am. V to VIII are the Household: what I keep. IX to XII are the World: what I give. The centre is not yours to light. It is Christ, who is the light.</p></div></div>
+        <p class="note center">The Lamb is its lamp (${esc(IL.CENTRE.subRef)}), and field 0 is the sanctuary. ${RINGS.map((R) => upper(R.sub) + ": " + esc(R.subRef)).join(". ")}.</p></div>
+      <div class="pane quiet rosepane">${rose()}<div><span class="rub">Read it from the centre</span><p class="sub">The same model, drawn as a rose window. 0 is the centre: the soul, where the lamp burns. 1 and 2 are the Person: what I am. 3 and 4 are the Household: what I keep. 5, 6 and 7 are the World: what I give. Each pane has its own colour, and a petal brightens as a practice is kept.</p></div></div>
       <h2 class="h2 mt">The centre</h2><div class="prose"><p>At the centre is not a goal or a best self. It is a Person. The servant who buried his talent said: I knew you to be a hard man, and I was afraid (Matthew 25:24-25). His failure began with a false picture of the master. Fear buries. Trust invests.</p></div>
       <h2 class="h2 mt">Christ at the centre</h2><p class="lede sm">${esc(C.intro)}</p>
       <div class="ccards">${C.cards.map((c) => `<div class="pane pad ccard"><h3 class="h3">${esc(c.title)}</h3>${c.caution ? `<p class="caution">${esc(c.caution)}</p>` : ""}<p>${esc(c.text)}</p><p class="vref">${esc(c.ref)}</p></div>`).join("")}</div>
-      <h2 class="h2 mt">Three rings</h2>${RINGS.map((R) => `<div class="pane pad ringcard rc-${R.colour}"><span class="rub">${R.says} · ${R.hours}</span><h3 class="h3"><i class="sw" aria-hidden="true"></i>${R.name}${ringSub(R)}</h3><p class="sub">${esc(R.gloss)}</p></div>`).join("")}
+      <h2 class="h2 mt">The centre and three rings</h2><div class="pane pad ringcard rc-f0"><span class="rub">${esc(IL.CENTRE.says)} · 0</span><h3 class="h3"><i class="sw centre" aria-hidden="true"></i>${esc(IL.CENTRE.name)}<span class="ringsub"> · ${esc(IL.CENTRE.sub)}</span></h3><p class="sub">Soul and Holiness. Not a field like the others: the place the light comes from. Everything else in this model is ordered to it.</p></div>${RINGS.map((R) => `<div class="pane pad ringcard"><span class="rub">${R.says} · ${R.hours}</span><h3 class="h3">${R.name}${ringSub(R)}</h3><p class="sub">${esc(R.gloss)}</p></div>`).join("")}
       <p class="note">The rings are an order of flow and not a ranking of worth. Inner serves outer.</p>
-      <h2 class="h2 mt">Three threads through all twelve</h2>
+      <h2 class="h2 mt">Three threads through all the fields</h2>
       ${IL.THREADS.map((t) => `<div class="pane pad"><span class="rub">${esc(t.says)}</span><h3 class="h3">${esc(t.name)}</h3><p class="sub">${esc(t.text)}</p></div>`).join("")}
       <p class="steward-line">${esc(IL.THREADS_LINE)}</p>
       <p><button class="link" data-act="gosteward">Write yours on the steward card</button></p>
@@ -1186,9 +1197,11 @@
       <div class="bp"><h2>My floor</h2>${state.floor.filter(Boolean).map((t, i) => `<p>${i + 1}. ${esc(t)}</p>`).join("")}
         <h2 style="margin-top:18pt">My rule of life</h2><h3>Each day</h3>${by("daily")}<h3>Each week</h3>${by("weekly")}<h3>Each month</h3>${by("monthly")}<h3>Each year</h3>${by("yearly")}
         <h3>In the Body</h3><p>Parish: ${esc(c.parish)}</p><p>Confession: ${esc(c.confession)}</p><p>Ahead of me: ${esc(c.ahead)}   Beside me: ${esc(c.beside)}   Behind me: ${esc(c.behind)}</p><p>Shown to: ${esc(c.shownTo)} ${esc(c.shownOn)}</p></div>
-      <div class="bp"><h2>The twelve fields</h2>${F ? `<p><i>This season's field: ${esc(F.name)}</i></p>` : ""}
-        ${RINGS.map((R) => `<p class="bring rc-${R.colour}">${R.name} · ${esc(R.sub)} · ${lower(R.says)} · ${R.hours}</p>
-          ${FIELDS.filter((f) => f.ring === R.id).map((f) => { const r = state.fields[f.id]; return `<div class="ba bfield rc-${R.colour}"><h3><span class="bnum">${f.n}.</span> ${esc(f.name)} · ${LEVELS[r.level]}</h3>${MOVES.filter((m) => r[m.id]).map((m) => `<p><b>${m.name}.</b> ${esc(r[m.id])}</p>`).join("")}${r.act ? `<p><b>Next act.</b> ${esc(r.act)}</p>` : ""}</div>`; }).join("")}`).join("")}</div>`;
+      <div class="bp"><h2>The fields, 0 to 7</h2>${F ? `<p><i>This season's field: ${esc(F.name)}</i></p>` : ""}
+        <p class="bring rc-f0">${IL.CENTRE.name} · ${esc(IL.CENTRE.sub)} · 0</p>
+          ${[fieldById("soul")].map((f) => { const r = state.fields[f.id]; return `<div class="ba bfield rc-f0"><h3><span class="bnum">${f.n}.</span> ${esc(f.name)} · ${LEVELS[r.level]}</h3>${MOVES.filter((m) => r[m.id]).map((m) => `<p><b>${m.name}.</b> ${esc(r[m.id])}</p>`).join("")}${r.act ? `<p><b>Next act.</b> ${esc(r.act)}</p>` : ""}</div>`; }).join("")}
+        ${RINGS.map((R) => `<p class="bring">${R.name} · ${esc(R.sub)} · ${lower(R.says)} · ${R.hours}</p>
+          ${FIELDS.filter((f) => f.ring === R.id).map((f) => { const r = state.fields[f.id]; return `<div class="ba bfield ${rc(f.id)}"><h3><span class="bnum">${f.n}.</span> ${esc(f.name)} · ${LEVELS[r.level]}</h3>${MOVES.filter((m) => r[m.id]).map((m) => `<p><b>${m.name}.</b> ${esc(r[m.id])}</p>`).join("")}${r.act ? `<p><b>Next act.</b> ${esc(r.act)}</p>` : ""}</div>`; }).join("")}`).join("")}</div>`;
   }
 
   /* ───────── render ─────────
@@ -1394,29 +1407,43 @@
     let confessed = false;
     state.rule.forEach((r, i) => {
       const s = ruleSchedule(r), c = companionOf(r), conf = r.cadence === "monthly" && /^confession\b/.test(normTitle(r.text)); if (conf) confessed = true;
-      list.push({ uid: /^[a-z0-9]{1,16}$/i.test(r.id) ? r.id : "r" + i, kind: "practice", cadence: r.cadence, date: s.date, time: conf ? "" : r.time, minutes: /\bhour\b/i.test(r.text) ? 60 : 15, rrule: s.rrule,
+      list.push({ uid: /^[a-z0-9]{1,16}$/i.test(r.id) ? r.id : "r" + i, kind: "practice", field: canonField(r.field) || "soul", cadence: r.cadence, date: s.date, time: conf ? "" : r.time, minutes: /\bhour\b/i.test(r.text) ? 60 : 15, rrule: s.rrule,
         summary: r.text, description: conf ? [r.note, "A reminder. Move it to the time your parish hears confessions."].filter(Boolean).join(" ") : r.note, url: c ? c.url : "", alarm: r.cadence === "daily" ? 5 : 10 });
     });
     if (!confessed) { const s = confessionSchedule();
-      list.push({ uid: "confession", kind: "confession", date: s.date, rrule: s.rrule, summary: "Confession", description: "A reminder, " + state.church.confession + ". Move it to the time your parish hears confessions." }); }
+      list.push({ uid: "confession", kind: "confession", field: "soul", date: s.date, rrule: s.rrule, summary: "Confession", description: "A reminder, " + state.church.confession + ". Move it to the time your parish hears confessions." }); }
     // The season review: about ninety days after the season began, and every ninety days after that.
     const F = state.focus ? fieldById(state.focus.field) : null; let rv = L.shift(F ? fromISO(state.focus.since) : anchor, 90), guard = 0;
     while (rv < today && guard++ < 400) rv = L.shift(rv, 90);
-    list.push({ uid: "seasonreview", kind: "review", date: rv, rrule: "FREQ=DAILY;INTERVAL=90", summary: "Season review: walk the twelve fields",
-      description: (F ? "This season's field: " + F.name + ". " : "") + "Give thanks, look again at the twelve, and ask which field is next." });
+    list.push({ uid: "seasonreview", kind: "review", field: F ? F.id : "soul", date: rv, rrule: "FREQ=DAILY;INTERVAL=90", summary: "Season review: walk the fields, 0 to 7",
+      description: (F ? "This season's field: " + F.n + " " + F.name + ". " : "") + "Give thanks, look again at the eight, and ask which field is next." });
     if (isISO(state.steward.baptism)) { // the anniversary of Baptism, every year, as a whole day
       const [, bm, bd0] = state.steward.baptism.split("-").map(Number), bd = bm === 2 && bd0 === 29 ? 28 : bd0;
       let when = new Date(now.getFullYear(), bm - 1, bd); if (L.iso(when) < L.iso(now)) when = new Date(now.getFullYear() + 1, bm - 1, bd);
-      list.push({ uid: "baptism", kind: "baptism", date: when, rrule: "FREQ=YEARLY;BYMONTH=" + bm + ";BYMONTHDAY=" + bd, summary: "The anniversary of my Baptism", description: "Give thanks, and renew the promises of Baptism." });
+      list.push({ uid: "baptism", kind: "baptism", field: "soul", date: when, rrule: "FREQ=YEARLY;BYMONTH=" + bm + ";BYMONTHDAY=" + bd, summary: "The anniversary of my Baptism", description: "Give thanks, and renew the promises of Baptism." });
     }
     if (o.feasts) { // the principal feasts of the twelve months ahead: single whole days, nothing repeating
       const from = L.iso(today), to = L.iso(L.shift(today, 365));
       L.principal(today.getFullYear()).concat(L.principal(today.getFullYear() + 1)).filter((f) => f.date >= from && f.date < to)
-        .forEach((f) => list.push({ uid: "feast" + f.date.replace(/-/g, ""), kind: "feast", date: fromISO(f.date), summary: f.name, description: "From the calendar of Illuminated Life. Your diocese may keep this day differently." }));
+        .forEach((f) => list.push({ uid: "feast" + f.date.replace(/-/g, ""), kind: "feast", field: "soul", date: fromISO(f.date), summary: f.name, description: "From the calendar of Illuminated Life. Your diocese may keep this day differently." }));
     }
     return list;
   }
   function makeICS(opts) { const stamp = icsStamp(); return icsWrap("Illuminated Life", calendarEvents(opts).reduce((all, e) => all.concat(icsEvent(e, stamp)), [])); }
+  // The same events, one file for each field that has any: "0 Soul and Holiness.ics", "3 Home and Stewardship.ics", and so on.
+  // Each file names its calendar after the field, so the events land in the matching calendar on the phone.
+  function makeICSByField(opts) {
+    const stamp = icsStamp(), ev = calendarEvents(opts);
+    return FIELDS.map((f) => { const mine = ev.filter((e) => (e.field || "soul") === f.id); if (!mine.length) return null;
+      const name = f.n + " " + f.name; return { name: name + ".ics", text: icsWrap(name, mine.reduce((all, e) => all.concat(icsEvent(e, stamp)), [])) }; }).filter(Boolean);
+  }
+  function exportCalendarByField() {
+    if (!canSave()) return Promise.resolve(false);
+    if (!isISO(state.meta.calStart)) { state.meta.calStart = todayISO(); save(); writeNow(); }
+    const files = makeICSByField({ feasts: state.prefs.icsFeasts });
+    return files.reduce((p, f) => p.then((ok) => saveFile(f.name, f.text, "text/calendar;charset=utf-8").then((k) => ok && k)), Promise.resolve(true))
+      .then((ok) => { if (ok) flash(files.length + (files.length === 1 ? " file saved. " : " files saved. ") + "Open each one and choose the calendar with the same number."); return ok; });
+  }
   // Hands the whole Rule to the calendar as one file. The first time, today is remembered as the day the dates are counted from.
   function exportCalendar() {
     if (!canSave()) return Promise.resolve(false);
@@ -1787,7 +1814,7 @@
   const showScreen = () => { render({ nav: true }); window.scrollTo(0, 0); const h1 = root.querySelector("main h1"); if (h1) { h1.tabIndex = -1; try { h1.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } } };
   const G = GUIDE ? GUIDE.mount({
     esc, icon, badge, fname, rc, bead, outLink, crisisNote, fmt, pretty, longDate, fromISO, isISO, isTime, todayISO, fieldById, compById, companionOf, periodKey, litDay, normTitle, ruleWeekday,
-    WEEKDAYS, CONFESSION, DEFAULT_FLOOR: blank().floor, PREVIEW, root, caps, canSave, saveFile, exportCalendar, calendarEvents, icsEvent, icsWrap, icsStamp,
+    WEEKDAYS, CONFESSION, DEFAULT_FLOOR: blank().floor, PREVIEW, root, caps, canSave, saveFile, exportCalendar, exportCalendarByField, makeICSByField, calendarEvents, icsEvent, icsWrap, icsStamp,
     state: () => state, ui, save, render, show: showScreen, flash, go, icoLatest: () => icoLatest(),
     print: (kind) => { ui.printKind = kind; ui.printing = true; writeNow(); render(); setTimeout(() => window.print(), 60); }
   }) : null;
@@ -1826,6 +1853,7 @@
     editrule: (el) => { ui.editRule = ui.editRule === el.dataset.id ? null : el.dataset.id; renderAnchored(`[data-act="editrule"][data-id="${cssq(el.dataset.id)}"]`); },
     delrule: (el) => { state.rule = state.rule.filter((r) => r.id !== el.dataset.id); save(); render(); flash("Removed from your Rule"); },
     ics: () => { exportCalendar(); },
+    icsfields: () => { exportCalendarByField(); },
     todayview: (el) => { state.prefs.todayView = el.dataset.v === "day" ? "day" : "list"; save(); render(); },
     print: () => { ui.printKind = "rule"; render(); setTimeout(() => window.print(), 60); },
     icoprint: () => { ui.printKind = "icon"; ui.printing = true; writeNow(); render(); setTimeout(() => window.print(), 60); },
@@ -1954,6 +1982,7 @@
       commit({ steward: next }); return Object.assign({}, state.steward, { gifts: state.steward.gifts.slice() }); },
     iconoSummary: () => { const r = icoLatest(); return r ? icono.synthesis(r) : null; },
     makeICS: (opts) => makeICS(opts),
+    makeICSByField: (opts) => makeICSByField(opts),
     makeDayICS: (isoDate) => (G ? G.makeDayICS(isoDate) : ""),
     removePractice: (id) => { const n = state.rule.length; state.rule = state.rule.filter((r) => r.id !== id); if (state.rule.length === n) return false; save(); render(); return true; },
     setChurch: (patch) => { const p = patch && typeof patch === "object" && !Array.isArray(patch) ? patch : {}, next = Object.assign({}, state.church);
