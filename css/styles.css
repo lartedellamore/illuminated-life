@@ -31,9 +31,18 @@
   --focus: #6B4F12;
   --bar: rgba(252, 252, 253, 0.93);
   --shadow: 0 1px 2px rgba(31, 45, 61, 0.04);
-  --person: #9E3B4D; --person-soft: #F8ECEE; --person-line: #E3BEC5;
-  --household: #2F5D8C; --household-soft: #EAF1F8; --household-line: #BCD0E5;
-  --world: #2E7257; --world-soft: #E9F3EE; --world-line: #BBD9CA;
+  --person: #B2546B; --person-soft: #FBE8ED; --person-line: #EEC3CE;
+  --household: #3C78A8; --household-soft: #E1EEF9; --household-line: #B7D3EC;
+  --world: #4E8A5C; --world-soft: #E4F2E7; --world-line: #BBDCC3;
+  /* Eight fields, eight panes of glass: gold for the centre, then seven pastels. */
+  --f0: var(--gold-ink); --f0-soft: var(--gold-soft); --f0-line: var(--gold-pale);
+  --f1: #B2546B; --f1-soft: #FBE8ED; --f1-line: #EEC3CE;
+  --f2: #C2643C; --f2-soft: #FDEAE0; --f2-line: #F1C7B4;
+  --f3: #4E8A5C; --f3-soft: #E4F2E7; --f3-line: #BBDCC3;
+  --f4: #3C78A8; --f4-soft: #E1EEF9; --f4-line: #B7D3EC;
+  --f5: #2E8A86; --f5-soft: #DFF3F1; --f5-line: #AEDCD8;
+  --f6: #6F5BA8; --f6-soft: #ECE7F9; --f6-line: #CBC1EA;
+  --f7: #8A5A95; --f7-soft: #F3E7F6; --f7-line: #DBC3E1;
   /* Liturgical colours of the day. They are not the ring colours: brighter, and always drawn as a small bead. */
   --lit-white: #FFFFFF; --lit-red: #C9302C; --lit-green: #5E9C3A; --lit-violet: #6F4BA8; --lit-rose: #E78FB0; --lit-ring: #8A7A55;
   --serif: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
@@ -45,9 +54,16 @@
     --gold: #D4B36A; --gold-ink: #E2C583; --gold-soft: #2A2618; --gold-pale: #6E5C30;
     --ink: #EDF1F5; --ink2: #C4CFDA; --dim: #9AA9B8; --rose: #E0A0AC; --on-gold: #1A1408; --edge: #7C8B9C; --focus: #F0D9A0;
     --bar: rgba(16, 24, 34, 0.93); --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --person: #E79AA9; --person-soft: #33202A; --person-line: #6B3A47;
-    --household: #8DB9E6; --household-soft: #1B2A3B; --household-line: #35557A;
-    --world: #86CDAA; --world-soft: #182E26; --world-line: #34644F;
+    --person: #F0A3B5; --person-soft: #33202A; --person-line: #6B3A47;
+    --household: #8FC2EC; --household-soft: #1B2A3B; --household-line: #35557A;
+    --world: #93D3A3; --world-soft: #182E26; --world-line: #34644F;
+    --f1: #F0A3B5; --f1-soft: #33202A; --f1-line: #6B3A47;
+    --f2: #F2B08E; --f2-soft: #35251C; --f2-line: #70462F;
+    --f3: #93D3A3; --f3-soft: #182E26; --f3-line: #34644F;
+    --f4: #8FC2EC; --f4-soft: #1B2A3B; --f4-line: #35557A;
+    --f5: #7FD6D0; --f5-soft: #16302F; --f5-line: #2E6360;
+    --f6: #BFB0F0; --f6-soft: #241F38; --f6-line: #4B4078;
+    --f7: #D9A8E3; --f7-soft: #2F2133; --f7-line: #5F4268;
     --lit-white: #F6F1E4; --lit-red: #EF6A5E; --lit-green: #9CCB6B; --lit-violet: #A98BE0; --lit-rose: #F4B2CB; --lit-ring: #B9A777;
     color-scheme: dark;
   }
@@ -57,17 +73,33 @@
   --gold: #D4B36A; --gold-ink: #E2C583; --gold-soft: #2A2618; --gold-pale: #6E5C30;
   --ink: #EDF1F5; --ink2: #C4CFDA; --dim: #9AA9B8; --rose: #E0A0AC; --on-gold: #1A1408; --edge: #7C8B9C; --focus: #F0D9A0;
   --bar: rgba(16, 24, 34, 0.93); --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --person: #E79AA9; --person-soft: #33202A; --person-line: #6B3A47;
-  --household: #8DB9E6; --household-soft: #1B2A3B; --household-line: #35557A;
-  --world: #86CDAA; --world-soft: #182E26; --world-line: #34644F;
+  --person: #F0A3B5; --person-soft: #33202A; --person-line: #6B3A47;
+  --household: #8FC2EC; --household-soft: #1B2A3B; --household-line: #35557A;
+  --world: #93D3A3; --world-soft: #182E26; --world-line: #34644F;
+  --f1: #F0A3B5; --f1-soft: #33202A; --f1-line: #6B3A47;
+  --f2: #F2B08E; --f2-soft: #35251C; --f2-line: #70462F;
+  --f3: #93D3A3; --f3-soft: #182E26; --f3-line: #34644F;
+  --f4: #8FC2EC; --f4-soft: #1B2A3B; --f4-line: #35557A;
+  --f5: #7FD6D0; --f5-soft: #16302F; --f5-line: #2E6360;
+  --f6: #BFB0F0; --f6-soft: #241F38; --f6-line: #4B4078;
+  --f7: #D9A8E3; --f7-soft: #2F2133; --f7-line: #5F4268;
   --lit-white: #F6F1E4; --lit-red: #EF6A5E; --lit-green: #9CCB6B; --lit-violet: #A98BE0; --lit-rose: #F4B2CB; --lit-ring: #B9A777;
   color-scheme: dark;
 }
 
-/* An element with one of these classes takes its ring's colour as --rc. */
+/* An element with one of these classes takes its field's colour as --rc. */
 .rc-person { --rc: var(--person); --rc-soft: var(--person-soft); --rc-line: var(--person-line); }
 .rc-household { --rc: var(--household); --rc-soft: var(--household-soft); --rc-line: var(--household-line); }
 .rc-world { --rc: var(--world); --rc-soft: var(--world-soft); --rc-line: var(--world-line); }
+.rc-f0 { --rc: var(--f0); --rc-soft: var(--f0-soft); --rc-line: var(--f0-line); }
+.rc-f1 { --rc: var(--f1); --rc-soft: var(--f1-soft); --rc-line: var(--f1-line); }
+.rc-f2 { --rc: var(--f2); --rc-soft: var(--f2-soft); --rc-line: var(--f2-line); }
+.rc-f3 { --rc: var(--f3); --rc-soft: var(--f3-soft); --rc-line: var(--f3-line); }
+.rc-f4 { --rc: var(--f4); --rc-soft: var(--f4-soft); --rc-line: var(--f4-line); }
+.rc-f5 { --rc: var(--f5); --rc-soft: var(--f5-soft); --rc-line: var(--f5-line); }
+.rc-f6 { --rc: var(--f6); --rc-soft: var(--f6-soft); --rc-line: var(--f6-line); }
+.rc-f7 { --rc: var(--f7); --rc-soft: var(--f7-soft); --rc-line: var(--f7-line); }
+.rose .p.rc-f0 .petal-fill { fill: var(--gold); }
 
 body {
   margin: 0; background: var(--paper); color: var(--ink);
@@ -289,8 +321,6 @@ p { margin: 0 0 10px; }
 .move .mh b { font-family: var(--serif); font-size: 20px; font-weight: 500; }
 .move .mh em { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); font-style: normal; }
 .move p { font-size: 14px; color: var(--ink2); margin: 2px 0 8px; }
-.move .mverse { font-family: var(--serif); font-size: 17px; line-height: 1.35; color: var(--ink); margin: 4px 0 8px; }
-.move .mverse span { font-family: var(--sans); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-ink); white-space: nowrap; margin-left: 4px; }
 .quote { font-family: var(--serif); font-style: italic; font-size: 19px; margin: 14px 0 4px; padding-left: 14px; border-left: 2px solid var(--gold-pale); color: var(--ink2); }
 .quote cite { display: block; font-style: normal; font-family: var(--sans); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-ink); margin-top: 6px; }
 
@@ -696,7 +726,7 @@ details.help .note { margin: 0 0 14px; }
   .bphoto img { display: block; max-width: 100%; max-height: 60mm; width: auto; height: auto; margin: 0 auto; border-radius: 1.2mm; }
   .bphoto figcaption { font-size: 9.5pt; font-style: italic; line-height: 1.3; margin-top: 1.6mm; overflow-wrap: anywhere; }
   /* The ring colours on paper: a thin rule and the numeral. Names and numerals carry the meaning in black and white. */
-  .book { --person: #9E3B4D; --household: #2F5D8C; --world: #2E7257; }
+  .book { --person: #B2546B; --household: #3C78A8; --world: #4E8A5C; --f1: #B2546B; --f2: #C2643C; --f3: #4E8A5C; --f4: #3C78A8; --f5: #2E8A86; --f6: #6F5BA8; --f7: #8A5A95; }
   .bring { font-family: var(--sans); font-size: 8.5pt; letter-spacing: 0.16em; text-transform: uppercase; margin: 16pt 0 6pt !important; padding-bottom: 3pt; border-bottom: 1.2pt solid var(--rc); page-break-after: avoid; }
   .bfield { border-left: 1.5pt solid var(--rc); padding-left: 9pt; }
   .bfield h3 { margin-top: 0; }
