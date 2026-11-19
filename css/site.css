@@ -221,10 +221,10 @@ footer p:last-child { margin-bottom: 0; color: #A9B6C4; }
 }
 
 /* the three rings, colour-coded like the glass of a rose window; gold is kept for the centre */
-:root { --person: #B2546B; --household: #3C78A8; --world: #4E8A5C; --f0: #86661F; --f1: #B2546B; --f2: #C2643C; --f3: #4E8A5C; --f4: #3C78A8; --f5: #2E8A86; --f6: #6F5BA8; --f7: #8A5A95;
-  --f1-n: #F0A3B5; --f2-n: #F2B08E; --f3-n: #93D3A3; --f4-n: #8FC2EC; --f5-n: #7FD6D0; --f6-n: #BFB0F0; --f7-n: #D9A8E3; }
+:root { --person: #B2546B; --household: #3C78A8; --world: #4E8A5C; --f0: #86661F; --f1: #3F8F55; --f2: #C23B4A; --f3: #2F6FBF; --f4: #7A4FB8; --f5: #C8711F; --f6: #6B7480; --f7: #A8901A;
+  --f1-n: #8FD7A2; --f2-n: #F09AA3; --f3-n: #8FB8F0; --f4-n: #C7A8F2; --f5-n: #F2B57A; --f6-n: #AEB6C0; --f7-n: #EBD56F; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --person: #E79AA9; --household: #8DB9E6; --world: #86CDAA; } }
-:root[data-theme="dark"] { --person: #F0A3B5; --household: #8FC2EC; --world: #93D3A3; --f0: #E2C583; --f1: #F0A3B5; --f2: #F2B08E; --f3: #93D3A3; --f4: #8FC2EC; --f5: #7FD6D0; --f6: #BFB0F0; --f7: #D9A8E3; }
+:root[data-theme="dark"] { --person: #F0A3B5; --household: #8FC2EC; --world: #93D3A3; --f0: #E2C583; --f1: #8FD7A2; --f2: #F09AA3; --f3: #8FB8F0; --f4: #C7A8F2; --f5: #F2B57A; --f6: #AEB6C0; --f7: #EBD56F; }
 .ring-person { --rc: var(--person); } .ring-household { --rc: var(--household); } .ring-world { --rc: var(--world); } .ring-f0 { --rc: var(--f0); }
 .ring li.f1 { --rc: var(--f1); } .ring li.f2 { --rc: var(--f2); } .ring li.f3 { --rc: var(--f3); } .ring li.f4 { --rc: var(--f4); } .ring li.f5 { --rc: var(--f5); } .ring li.f6 { --rc: var(--f6); } .ring li.f7 { --rc: var(--f7); }
 .ring[class*="ring-"] { border-top: 3px solid var(--rc); }
