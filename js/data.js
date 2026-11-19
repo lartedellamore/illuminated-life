@@ -52,7 +52,7 @@ IL.STATES_OF_LIFE = [["", "Not set"], ["single", "Single"], ["married", "Married
 
 /* Eight colours, one for each field: gold for the centre, then seven pastel glasses.
    They are a memory aid, like the glass of a rose window, and are not the Church's liturgical colours. The values live in css/styles.css. */
-IL.COLOUR_NOTE = "Each field has its own colour, like a pane of glass in a rose window: gold for the centre, then seven pastel colours for the seven fields around it. They are a memory aid and are not the Church's liturgical colours.";
+IL.COLOUR_NOTE = "Each field has its own colour, the same as its folder in Finder and Notes: gold for the centre, then green, red, blue, purple, orange, grey and yellow. They are a memory aid and are not the Church's liturgical colours.";
 
 IL.LEVELS = ["Not yet begun", "Kindled", "Shining", "Burning", "Radiant"];
 
