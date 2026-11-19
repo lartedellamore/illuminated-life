@@ -5,7 +5,7 @@ A Catholic rule of life across twelve fields of stewardship: a website, the book
 Live: https://app.lartedellamore.com/ (the app itself is at /app.html)
 
 > One Master entrusts one steward with twelve fields in three rings:
-> Person (Body, Mind, Soul, Heart), Household (Time, Finance, Work, Home), World (Creation, Speech, Beauty and Making, Mission).
+> Eight fields, 0 to 7: 0 Soul and Holiness at the centre; the Person (1 Body and Mind, 2 Heart and Relationships); the Household (3 Home and Stewardship, 4 Work); the World (5 Creation, 6 Mission, 7 Vocation).
 > In every field the same four movements take place: **receive, bless, spend, return.**
 
 ## What it does
