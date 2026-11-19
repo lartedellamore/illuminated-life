@@ -671,6 +671,81 @@ details.help .note { margin: 0 0 14px; }
 .pill[aria-disabled="true"] { opacity: 0.45; cursor: default; }
 .pill[aria-disabled="true"]:hover { color: var(--ink2); border-color: var(--edge); }
 
+/* ── the chapel ──
+   The whole app stands in one quiet room: light falls from above, the day's verse sits in a niche
+   with one candle, and the rose window throws a little colour on the wall.
+   Every colour here is mixed from the colours above, so the dark theme follows without a second list. */
+@media screen {
+  body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: radial-gradient(130% 55% at 50% -8%, var(--blue) 0%, transparent 72%), linear-gradient(180deg, transparent 55%, var(--world-soft) 100%); }
+  /* the niche: a pointed arch for the verse of the day */
+  .pane.verse { position: relative; padding: 58px 26px 20px; border-radius: 190px 190px 20px 20px / 120px 120px 20px 20px; background: linear-gradient(180deg, var(--card) 0%, var(--surface) 100%); border-color: var(--line2); }
+  .pane.verse::before { content: ""; position: absolute; left: 50%; top: 22px; width: 9px; height: 15px; margin-left: -4.5px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; background: linear-gradient(180deg, var(--gold-pale), var(--gold)); box-shadow: 0 0 14px 5px var(--gold-soft), 0 0 30px 12px var(--gold-soft); animation: candle 4s ease-in-out 3; }
+  .pane.verse::after { content: ""; position: absolute; left: 50%; top: 39px; width: 22px; margin-left: -11px; border-top: 1px solid var(--gold-pale); }
+  .niche-link { margin: 6px 0 0; }
+  .niche-link .link { font-family: var(--serif); font-style: italic; font-size: 17px; text-decoration: none; gap: 6px; }
+  .niche-link .link:hover { text-decoration: underline; text-underline-offset: 3px; }
+  /* the rose window throws its three colours, softly */
+  .rosewrap { position: relative; }
+  .rosewrap::before { content: ""; position: absolute; left: 50%; top: -6px; width: 202px; height: 202px; margin-left: -101px; border-radius: 50%; pointer-events: none; opacity: 0.55; filter: blur(16px);
+    background: conic-gradient(from 15deg, var(--person-soft) 0 33%, var(--household-soft) 33% 66%, var(--world-soft) 66% 100%); }
+  .rosewrap > * { position: relative; }
+  /* one small gold bead under the section you are in, so colour is not the only sign */
+  .tabbar button { position: relative; }
+  .tabbar button[aria-current="page"]::after { content: ""; position: absolute; left: 50%; bottom: -3px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--gold); }
+  /* a pale veil behind a sheet */
+  .sheet-back { background: color-mix(in srgb, var(--ink2) 32%, transparent); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+}
+@keyframes candle { 0%, 100% { transform: scale(1); opacity: 1; } 40% { transform: scale(1.06, 1.12) translateY(-0.5px); opacity: 0.9; } 70% { transform: scale(0.97, 0.95); } }
+
+/* ── the Interior Castle ── */
+.cst { padding: 14px 14px 12px; scroll-margin-top: 76px; background: linear-gradient(180deg, var(--card), var(--surface)); border-color: var(--line2); }
+.cst-svg { display: block; width: 100%; max-width: 330px; height: auto; margin: 0 auto; overflow: visible; }
+.cst-dim { fill: var(--surface); }
+.cst-band { animation: cst-in 1.6s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--d) - var(--o)); }
+.cst-b1 { --tint: var(--household-line); --mix: 62%; }
+.cst-b2 { --tint: color-mix(in srgb, var(--household-line), var(--world-line)); --mix: 56%; }
+.cst-b3 { --tint: var(--world-line); --mix: 52%; }
+.cst-b4 { --tint: color-mix(in srgb, var(--world-line) 55%, var(--gold-pale)); --mix: 50%; }
+.cst-b5 { --tint: color-mix(in srgb, var(--person-line) 55%, var(--gold-pale)); --mix: 46%; }
+.cst-b6 { --tint: var(--gold-pale); --mix: 52%; }
+.cst-b7 { --tint: var(--gold-pale); --mix: 26%; }
+.cst-band, .cst-n { fill: var(--blue); fill: color-mix(in srgb, var(--tint) var(--mix), var(--card)); }
+.cst-facet { fill: none; stroke: var(--card); stroke-width: 0.7; opacity: 0.85; }
+.cst-wall { fill: none; stroke: var(--card); stroke-width: 1.3; stroke-linejoin: round; }
+.cst-wall.outer { stroke: var(--gold-pale); stroke-width: 1; }
+.cst-door { fill: var(--card); stroke: var(--gold-pale); stroke-width: 0.8; }
+.cst-door.lit { fill: var(--gold-soft); stroke: var(--gold); animation: cst-in 0.9s ease both; animation-delay: calc(var(--d) - var(--o)); }
+.cst-rays { fill: none; stroke: var(--gold); stroke-width: 0.7; stroke-linecap: round; opacity: 0.5; animation: cst-rays 2.4s ease both; animation-delay: calc(var(--d) - var(--o)); }
+.cst-halo { fill: var(--gold); opacity: 0.22; transform-origin: 160px 160px; animation: cst-halo 2.6s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--d) - var(--o)); }
+.cst-sun { fill: var(--gold); }
+.cst-light { opacity: 0; animation: cst-light var(--l) linear both; animation-delay: calc(var(--d) - var(--o)); }
+.cst-light .glow { fill: var(--gold); opacity: 0.28; }
+.cst-light .core { fill: var(--card); stroke: var(--gold-ink); stroke-width: 1; }
+@keyframes cst-in { from { opacity: 0; } }
+@keyframes cst-rays { from { opacity: 0; } }
+@keyframes cst-halo { from { opacity: 0.1; transform: scale(0.6); } }
+.cst-bar { display: flex; justify-content: center; gap: 7px; margin: 6px 0 12px; }
+.cst-bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); animation: cst-bead 0.8s ease both; animation-delay: calc(var(--d) - var(--o)); }
+@keyframes cst-bead { from { background: var(--line2); } }
+.cst-caps { position: relative; min-height: 124px; text-align: center; }
+.cst-cap { position: absolute; left: 0; right: 0; top: 0; margin: 0; padding: 0 6px; opacity: 0; animation: cst-cap var(--l) ease both; animation-delay: calc(var(--d) - var(--o)); }
+.cst-cap.last { animation-name: cst-cap-last; }
+.cst-cap b { display: block; font-family: var(--sans); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 600; color: var(--gold-ink); margin-bottom: 6px; }
+.cst-cap span { display: block; font-family: var(--serif); font-style: italic; font-size: 20px; line-height: 1.35; color: var(--ink); text-wrap: balance; }
+@keyframes cst-cap { 0% { opacity: 0; transform: translateY(5px); } 14%, 88% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes cst-cap-last { 0% { opacity: 0; transform: translateY(5px); } 30%, 100% { opacity: 1; transform: none; } }
+.cst-acts { justify-content: center; }
+.cst.paused *, .cst.paused { animation-play-state: paused !important; }
+.cst-list { list-style: none; margin: 0; padding: 0; }
+.cst-list li { border-top: 1px solid var(--line); }
+.cst-list li:first-child { border-top: none; }
+.cst-list .row { align-items: flex-start; }
+.cst-n { background: var(--blue); background: color-mix(in srgb, var(--tint) var(--mix), var(--card)); color: var(--ink2); font-family: var(--serif); font-size: 16px; font-weight: 600; }
+.rowtext .cst-more { margin-top: 5px; color: var(--ink2); }
+/* Without motion the castle is shown whole and still, and the list beneath says what the captions say. */
+@media (prefers-reduced-motion: reduce) { .cst-caps, .cst-acts, .cst-bar { display: none; } .cst-light { opacity: 0; } }
+
 @media print {
   .top, .tabbar, .body, .toast, .update, .sheet, .sheet-back { display: none !important; }
   body { background: #fff; color: #000; }

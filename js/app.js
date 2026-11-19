@@ -347,6 +347,7 @@
     shield: "M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6Z",
     guide: "M5.2 5.5h13.6a1.7 1.7 0 0 1 1.7 1.7v7.6a1.7 1.7 0 0 1-1.7 1.7h-7.3L7.6 20v-3.5H5.2a1.7 1.7 0 0 1-1.7-1.7V7.2a1.7 1.7 0 0 1 1.7-1.7ZM8 9.6h8M8 12.6h5",
     send: "M4.5 12h13M12.5 6.5 18 12l-5.5 5.5",
+    castle: "M5 20V10l2-1.6V5.5h2.2V7h1.7V5.5h2.2V7h1.7V5.5H17v2.9l2 1.6v10ZM10 20v-4.4a2 2 0 0 1 4 0V20",
     camera: "M5 8h2.6l1.5-2.3h5.8L16.4 8H19a1.7 1.7 0 0 1 1.7 1.7v7.6A1.7 1.7 0 0 1 19 19H5a1.7 1.7 0 0 1-1.7-1.7V9.7A1.7 1.7 0 0 1 5 8ZM12 16.4a3.1 3.1 0 1 0 0-6.2 3.1 3.1 0 0 0 0 6.2Z"
   };
   const icon = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="${n === "more" ? 2.6 : 1.5}" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n] || ICONS.spark}"/></svg>`;
@@ -464,7 +465,8 @@
     const F = state.focus ? fieldById(state.focus.field) : null;
     let h = `<section class="stack">
       <div class="pane quiet verse"><h1 class="rub center"><span class="vh">Today, </span>${esc(fmt(now, { weekday: "long", day: "numeric", month: "long" }))}</h1>
-        <p class="vtext">“${esc(v.t)}”</p><p class="vref">${esc(v.r)}</p></div>`;
+        <p class="vtext">“${esc(v.t)}”</p><p class="vref">${esc(v.r)}</p>
+        ${state.floorMode ? "" : `<p class="niche-link"><button class="link" data-act="sub" data-s="castle">Enter the castle ${icon("chev", 14)}</button></p>`}</div>`;
     // Two ways to see today: the list of what to keep, or the day hour by hour. Floor mode shows only the floor.
     if (G && !state.floorMode) {
       h += `<div class="seg" id="today-seg" role="group" aria-label="How to see today">${[["list", "List", "what to keep"], ["day", "Day", "hour by hour"]].map(([k, t, e]) => `<button data-act="todayview" data-v="${k}" aria-pressed="${state.prefs.todayView === k}">${t}<em>${e}</em></button>`).join("")}</div>`;
@@ -928,6 +930,7 @@
     ...(GUIDE ? [["guide", "The Guide", "Plain questions that build a first Rule and a plan for the day", "guide"]] : []),
     ["model", "The Steward's Model", "Lamp, temple, house, field. Twelve fields, four movements, six laws", "spark"],
     ["icon", "The Icon Screen", "A mirror in five panels: where you are, what you were given, what it is for", "lamp"],
+    ["castle", "The Interior Castle", "St Teresa's seven dwelling places, as a picture to pray with", "castle"],
     ["review", "Season review", "Walk the twelve fields and choose one", "grid"],
     ["year", "The Church's year", "The whole calendar, day by day", "calendar"],
     ...(GUIDE ? [["calendar", "Into my calendar", "Hand your Rule to Apple, Google or Outlook as a file", "send"]] : []),
@@ -937,8 +940,10 @@
     ["backup", "Keep my words safe", "Back up, restore, or erase what is on this device", "shield"],
     ["about", "About this app", "What it is, and what it must never become", "book"]
   ];
-  const SUBS = { model: Model, icon: Icono, review: Review, year: Year, treasury: Treasury, prayers: Prayers, companions: Companions, backup: Backup, about: About };
+  const SUBS = { model: Model, icon: Icono, castle: Castle, review: Review, year: Year, treasury: Treasury, prayers: Prayers, companions: Companions, backup: Backup, about: About };
   if (GUIDE) { SUBS.guide = () => G.guide(); SUBS.calendar = () => G.calendar(); }
+  // The Interior Castle (js/castle.js): a picture to pray with. It reads nothing from the state and saves nothing.
+  function Castle() { return IL.castle ? IL.castle.screen({ esc, from: ui.castle }) : `<h1 class="h1">The Interior Castle</h1><p class="sub">This page could not be loaded. Reload the app.</p>`; }
   function More() {
     if (!ui.sub || !SUBS[ui.sub]) return `<section class="stack"><h1 class="h1">More</h1><p class="lede">The model beneath the app, and the tools around it.</p>
       ${MORE.map(([id, t, s, ic]) => `<button class="pane row link-row" data-act="sub" data-s="${id}">${badge(ic, id === "model")}<span class="rowtext"><b>${t}</b><span>${s}</span></span>${icon("chev", 18)}</button>`).join("")}</section>`;
@@ -1263,7 +1268,7 @@
   }
   function go(tab, sub, opts) {
     checkDay();
-    ui.tab = SCREENS[tab] ? tab : "today"; ui.sub = sub || null; ui.confirmFocus = null; ui.editRule = null; ui.calDay = null; ui.ico.view = null; ui.ico.del = false;
+    ui.tab = SCREENS[tab] ? tab : "today"; ui.sub = sub || null; ui.confirmFocus = null; ui.editRule = null; ui.calDay = null; ui.ico.view = null; ui.ico.del = false; ui.castle = null;
     ph.open = null; ph.opener = null; ph.confirm = false; ph.delDay = false; ph.msg = ""; ph.bk = null; if (!(ph.restore && ph.restore.busy)) ph.restore = null;
     if (ui.printing && ui.printKind === "diary") { ui.printing = false; ui.printKind = "rule"; } // some phones never say that printing is over; do not keep the printed pictures in hand
     if (ui.tab === "diary") { ui.day = null; ui.diaryView = "diary"; } // the Diary tab always opens on today's page
@@ -1797,6 +1802,11 @@
     tab: (el) => go(el.dataset.t),
     sub: (el) => go("more", el.dataset.s),
     back: () => go("more"),
+    // The Interior Castle: watch from one dwelling place, begin again, or hold the picture still.
+    castlego: (el) => { ui.castle = Number(el.dataset.k); render(); const c = document.getElementById("castle"); if (c) c.scrollIntoView({ block: "start", behavior: "smooth" }); },
+    castleagain: () => { ui.castle = null; render(); },
+    castlepause: (el) => { const c = document.getElementById("castle"); if (!c) return; const held = c.classList.toggle("paused"); el.setAttribute("aria-pressed", held ? "true" : "false"); el.textContent = held ? "Go on" : "Pause"; },
+    castleexamen: () => { go("diary"); acts.diaryview({ dataset: { v: "examen" } }); },
     later: (el) => { ui.later[el.dataset.k] = true; render(); },
     reload: () => { writeNow(); location.reload(); },
     toggleprayer: () => { ui.showPrayer = !ui.showPrayer; render(); },

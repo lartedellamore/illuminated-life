@@ -16,7 +16,7 @@ Live: https://app.lartedellamore.com/ (the app itself is at /app.html)
 | **Fields** | Open any of the twelve fields: what it is for, its disorder, questions to examine, the four movements, and a ladder of four rungs. |
 | **Rule** | Your floor, your daily, weekly, monthly and yearly practices, your parish and your three people, and the precepts of the Church. Export to your calendar or print as a booklet. |
 | **Diary** | Seven things you are grateful for, three you are praying for, one act of service, and where you saw light. Save it as a PDF. The evening Examen lives here too. |
-| **More** | The Steward's Model, the season review, the Church's year (the whole General Roman Calendar), the Treasury, prayers, and backup. |
+| **More** | The Steward's Model, the Interior Castle, the season review, the Church's year (the whole General Roman Calendar), the Treasury, prayers, and backup. |
 
 ## Design promises
 
@@ -42,6 +42,7 @@ book/illuminated.pdf    the book (62 pages)
 assets/                 cover, screenshots and the share image (og.jpg) used by the website
 assets/fonts/           Cormorant Garamond and Inter, hosted here (no Google Fonts)
 js/data.js              every word the app says: fields, laws, prayers, verses
+js/castle.js            the Interior Castle: the drawing, its timing and its words
 js/liturgy.js           the Church's year: the General Roman Calendar, day by day
 js/calendar-data.js     the celebrations of the calendar (and the Netherlands)
 js/app.js               state, screens and events
@@ -95,6 +96,11 @@ The twelve fields are colour-coded by ring: ruby for the Person, sapphire for th
 - **The Icon Screen** (`js/icons.js`) is the five-panel iconography from *Accedite et Illuminamini*. Its items were written for this app and await a priest's review.
 - **Calendar**: the app exports `.ics` files. It cannot read or write a calendar account.
 - The picture of the model is a parish church: lamp, temple, house, field.
+
+## The chapel and the Interior Castle
+
+- **The chapel** is the look of the app: light falling from above, the day's verse in an arched niche with one candle, and a little colour thrown by the rose window. It is a picture only. The app is not a chapel, and it still sends you to your parish.
+- **The Interior Castle** (`js/castle.js`, More → The Interior Castle, or "Enter the castle" on Today) is a picture to pray with, after St Teresa of Ávila: seven dwelling places lit from the gate to the centre in about forty seconds, with the same seven as a list beneath. It reads nothing from your state, saves nothing, and never says where you are. With reduced motion it is shown whole and still. Its words are this app's own summary and await a priest's review.
 
 ## Guides and sources
 
