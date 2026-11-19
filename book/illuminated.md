@@ -1,5 +1,3 @@
-<!-- Source text of the book. The typeset edition is illuminated.pdf. A private work of formation; no imprimatur; awaiting review by a priest. -->
-
 # Illuminated: The Image of God, Embodied
 
 Oct 5, 2026 · @Wietske Hoencamp
@@ -10,7 +8,7 @@ Oct 5, 2026 · @Wietske Hoencamp
 
 This booklet makes one claim and then builds a life on it. The claim: you are made in the image of God, that image is embodied, and every part of your ordinary life is the material in which it is meant to shine. Your sleep, your finances, your calendar, your speech and your kitchen table are not beside the spiritual life. They are where it happens.
 
-It gathers two earlier works into one line of thought, and then draws a single model from them. *Imago Dei Incorporata* supplies the theology: the image given, made flesh, taken into a Body, and put to work. *Accedite et Illuminamini* supplies the path: illumination, the twelve fields of stewardship, the rule of life. Chapter 6 puts the whole of it on one page: one Master, one steward, twelve fields, four movements.
+It gathers two earlier works into one line of thought, and then draws a single model from them. *Imago Dei Incorporata* supplies the theology: the image given, made flesh, taken into a Body, and put to work. *Accedite et Illuminamini* supplies the path: illumination, the eight fields of stewardship, the rule of life. Chapter 6 puts the whole of it on one page: one Master, one steward, eight fields, four movements.
 
 Three authorities stand behind every page, in this order. Sacred Scripture, read within the Church's Tradition, is the ground. The Magisterium is the spine: here chiefly the Catechism of the Catholic Church, whose paragraph numbers appear in brackets so that every claim can be checked, and the teaching of the popes up to Leo XIV. The Doctors of the Church are the chorus.
 
@@ -190,7 +188,7 @@ The second word in this chapter's title matters as much as the first. You are on
 
 Much exhaustion in serious people does not come from doing too much. It comes from being several people at once, a work self, a church self, a private self, and paying the upkeep on each. The Lord's own image for the cure is the single eye: if your eye is sound, your whole body will be full of light (Matthew 6:22). An undivided aim makes the whole person luminous.
 
-So the fields in the next chapter are not twelve projects. They are twelve places where one love is at work. Saint Augustine called virtue the right ordering of love. Sin, on his account, is seldom love of a bad thing. It is a good thing loved out of its place: work loved as identity, a friend loved as saviour, comfort loved above duty. The question to ask of any attachment is not "do I love this too much?", which only breeds scruples. It is "what does this outrank in my life?" That question has an answer, because behaviour settles it. Look at where the money goes when it is tight, and what gets cancelled when the week is full.
+So the fields in the next chapter are not eight projects. They are eight places where one love is at work. Saint Augustine called virtue the right ordering of love. Sin, on his account, is seldom love of a bad thing. It is a good thing loved out of its place: work loved as identity, a friend loved as saviour, comfort loved above duty. The question to ask of any attachment is not "do I love this too much?", which only breeds scruples. It is "what does this outrank in my life?" That question has an answer, because behaviour settles it. Look at where the money goes when it is tight, and what gets cancelled when the week is full.
 
 The order itself is simple to state. God first, as the love that puts every other love in its place and so makes it safe. Then those directly entrusted to you: spouse, children, parents, the people who depend on you. The Catechism roots this in the fourth commandment and calls it the order of charity \[CCC 2197\]. Then the wider circles of friendship, work, neighbour and stranger, with the poor holding a claim that is not optional \[CCC 2443-2449\]. Your state of life gives this order its concrete shape. Married, single, ordained or consecrated, all are called to the same holiness, and each walks toward it through the duties of that state \[CCC 2013\].
 
@@ -202,161 +200,89 @@ It follows that he ordinarily asks about one field at a time. When your method w
 
 **A word to keep.** Nothing I have is mine. All of it is material for love, and I will be asked.
 
-## 5. The Twelve Fields
+## 5. The Fields, 0 to 7
 
 *Well done, good and faithful servant. You have been faithful over a little.* (Matthew 25:21)
 
-Here is the map of everything you have been given. Its purpose is diagnostic. Most people are strong in three or four fields, adequate in five, and have one they have quietly written off. The written-off field is usually where the next growth is.
+Here is the map of everything you have been given. Its purpose is diagnostic. There are eight: the soul at the centre, numbered 0, and seven fields around it, numbered 1 to 7. Most people are strong in two or three, adequate in the rest, and have one they have quietly written off. The written-off field is usually where the next growth is.
 
 For each field: what it holds, what faithfulness looks like, how it fails, the question to ask, and one small first step.
 
-### I. Body
+### 0. Soul and Holiness
 
-Sleep, food, movement, medical care, rest, sexuality. Your body is a temple of the Holy Spirit. You are not your own, for you were bought at a price, so glorify God in your body (1 Corinthians 6:19-20). The Spirit truly dwells in the baptised, and this body is destined to rise \[CCC 364, 1004\]. That is why its care is worship and not vanity. Life and health are gifts entrusted to us, to be cared for reasonably, without making an idol of physical perfection \[CCC 2288-2289\]. Sexuality belongs here too. Chastity is its integration within the person, lived according to one's state of life \[CCC 2337\].
-
-- **Faithful:** a fixed bedtime, meals at a table, a daily walk, appointments kept.
-
-- **Fails as:** neglect on one side, the cult of the body on the other. Both treat the body as something other than you.
-
-- **Ask:** am I caring for the body I was given, or punishing it, or ignoring it?
-
-- **First step:** the phone charges outside the bedroom.
-
-### II. Mind
-
-Attention, study, formation, imagination, everything you let in. What you look at becomes what you think with.
-
-- **Faithful:** one serious book always in progress, chosen inputs, faith that keeps learning.
-
-- **Fails as:** a scattered attention sold by the minute, or a theology that stopped growing at eighteen.
-
-- **Ask:** who decides what enters my mind each day?
-
-- **First step:** twenty minutes of real reading before any screen.
-
-### III. Soul
-
-The faith itself, received and handed on: prayer, Scripture, sacraments, confession, silence, spiritual direction. The tradition proposes fixed rhythms of prayer precisely because constant prayer is fed by structure \[CCC 2698\].
+The faith itself, received and handed on: prayer, Scripture, the sacraments, confession, silence, spiritual direction, and the pursuit of holiness that all of it serves. This is not a field like the others. It is the centre, the sanctuary where the lamp burns, and every other field is lit from here. The tradition proposes fixed rhythms of prayer precisely because constant prayer is fed by structure \[CCC 2698\]. All the faithful are called to the fullness of Christian life and to the perfection of charity \[CCC 2013\].
 
 - **Faithful:** daily anchors at set times, Sunday Mass, confession on a set interval, one director.
-
-- **Fails as:** bursts of intensity, a retreat and then a collapse, with nothing in between.
-
+- **Fails as:** bursts of intensity, a retreat and then a collapse, with nothing in between. Or holiness pursued as a project, with God as its instrument.
 - **Ask:** would my prayer survive my worst week?
-
 - **First step:** two minutes, morning and night, same place.
 
-### IV. Heart
+### 1. Body and Mind
+
+Sleep, food, movement, medical care, rest, sexuality; and attention, study, formation, imagination, everything you let in. Your body is a temple of the Holy Spirit. You are not your own, for you were bought at a price, so glorify God in your body (1 Corinthians 6:19-20). The Spirit truly dwells in the baptised, and this body is destined to rise \[CCC 364, 1004\]. That is why its care is worship and not vanity. Life and health are gifts entrusted to us, to be cared for reasonably, without making an idol of physical perfection \[CCC 2288-2289\]. Sexuality belongs here too: chastity is its integration within the person, lived according to one's state of life \[CCC 2337\]. And what you look at becomes what you think with. The beauty you take in, in art and music and the made world, belongs to this field, because it forms the mind as surely as food forms the body \[CCC 2500\].
+
+- **Faithful:** a fixed bedtime, meals at a table, a daily walk, appointments kept; one serious book always in progress, chosen inputs, a faith that keeps learning.
+- **Fails as:** neglect on one side, the cult of the body on the other; a scattered attention sold by the minute, or a theology that stopped growing at eighteen.
+- **Ask:** am I caring for the body I was given, or punishing it, or ignoring it? Who decides what enters my mind each day?
+- **First step:** the phone charges outside the bedroom, and twenty minutes of real reading come before any screen.
+
+### 2. Heart and Relationships
 
 Marriage and family, friendship, community, emotional honesty. The family is a communion of persons, an image of the communion of Father, Son and Spirit \[CCC 2205\].
 
 - **Faithful:** presence that is not distracted, and three relationships: someone ahead of you, someone beside you, someone you are helping along.
-
 - **Fails as:** being widely liked and known by no one.
-
 - **Ask:** who knows the whole truth about me?
-
 - **First step:** one unhurried hour a week, in person, in the calendar.
 
-### V. Time
+### 3. Home and Stewardship
 
-The calendar, commitments, rhythm, saying no. Your calendar is a more honest statement of your loves than your journal.
+Your physical space, order, hospitality, daily beauty; the calendar, commitments, rhythm, saying no; earning, spending, saving, giving, debt. The home is the domestic church, the first school of Christian life \[CCC 1655-1657\]. Your calendar is a more honest statement of your loves than your journal, and the Lord's day is kept holy by rest as well as by worship \[CCC 2184-2185\]. The Fathers call almsgiving a work of mercy and also a work of justice: not to share with the poor is to rob them \[CCC 2446-2447\]. Three things that the world keeps apart, the steward keeps together, because they are one desk: the place, the hours and the goods put into your hands.
 
-- **Faithful:** hours that match your stated priorities, rest booked first, empty space left on purpose \[CCC 2184-2185\].
+- **Faithful:** a home that can receive a guest without an emergency; hours that match your stated priorities, rest booked first, empty space left on purpose; knowing your numbers, giving first and by proportion, contentment practised as a skill.
+- **Fails as:** the space that drains you every day and is never addressed; a life of reaction, where the urgent permanently defeats the important; vagueness about money, which is nearly always avoidance dressed as detachment.
+- **Ask:** could I welcome someone tonight? If a stranger read my week, what would they say I love? Do I know, to the euro, what came in and what I gave?
+- **First step:** block the day of rest before anything else, and set the giving aside on the day income arrives.
 
-- **Fails as:** a life of reaction, where the urgent permanently defeats the important.
-
-- **Ask:** if a stranger read my week, what would they say I love?
-
-- **First step:** block the day of rest before anything else.
-
-### VI. Finance
-
-Earning, spending, saving, giving, debt. The Fathers call almsgiving a work of mercy and also a work of justice: not to share with the poor is to rob them \[CCC 2446-2447\].
-
-- **Faithful:** knowing your numbers, giving first and by proportion, contentment practised as a skill.
-
-- **Fails as:** vagueness, which is nearly always avoidance dressed as detachment.
-
-- **Ask:** do I know, to the euro, what came in and what I gave?
-
-- **First step:** set the giving aside on the day income arrives.
-
-### VII. Work
+### 4. Work
 
 Labour, craft, profession, excellence. Work is a share in the work of creation, and its dignity comes from the person who does it \[CCC 2427-2428\].
 
 - **Faithful:** done well, on time, honestly, and then stopped.
-
 - **Fails as:** work as identity, where rest is impossible because you would have to meet yourself.
-
 - **Ask:** does my work leave me able to pray and to love the people at home?
-
 - **First step:** a shutdown ritual: write tomorrow's first task, close the laptop, say "enough".
 
-### VIII. Home
+### 5. Creation
 
-Your physical space, order, hospitality, daily beauty. The home is the domestic church, the first school of Christian life \[CCC 1655-1657\].
+The earth, animals, food, consumption, what you buy and from whom; words, honesty, gossip, promises, everything you publish; art, music, craft, writing, garden, song, the work of your hands. Dominion over creation is a stewardship that answers to God and to those who come after \[CCC 2415-2418\]. Speech is part of it, because a word is the first thing a human being makes: detraction and calumny wound justice and charity, and the damage must be repaired \[CCC 2477, 2487\]. And making belongs here, because to make something good is to join the Maker: truth carries its own splendour, and artistic gifts bring a duty to use them \[CCC 2500-2501\].
 
-- **Faithful:** a home that can receive a guest without an emergency, enough order to think in, one beautiful thing in each room.
+- **Faithful:** buying less and better, knowing where things come from, cutting waste as a quiet discipline; the hard thing said to the person's face and nothing behind their back; making something regularly with no productive excuse.
+- **Fails as:** treating the earth as someone else's issue; the pious feed and the unguarded conversation; "no time for that any more", the first sign of a life that has become purely useful.
+- **Ask:** what did my household throw away this week? Would I say this if they were in the room? When did I last make something just because it was good?
+- **First step:** one meal a week cooked wholly from what is already in the house, and one day a week with no comment on anyone who is absent.
 
-- **Fails as:** the space that drains you every day and is never addressed.
-
-- **Ask:** could I welcome someone tonight?
-
-- **First step:** ten minutes of resetting one room each evening.
-
-### IX. Creation
-
-The earth, animals, food, consumption, what you buy and from whom. Dominion over creation is a stewardship that answers to God and to those who come after \[CCC 2415-2418\].
-
-- **Faithful:** buying less and better, knowing where things come from, cutting waste as a quiet discipline.
-
-- **Fails as:** treating it as someone else's issue.
-
-- **Ask:** what did my household throw away this week?
-
-- **First step:** one meal a week cooked wholly from what is already in the house.
-
-### X. Speech
-
-Words, honesty, gossip, promises, everything you publish. Detraction and calumny wound justice and charity, and the damage must be repaired \[CCC 2477, 2487\].
-
-- **Faithful:** the hard thing said to the person's face and nothing behind their back; your yes meaning yes.
-
-- **Fails as:** the pious feed and the unguarded conversation.
-
-- **Ask:** would I say this if they were in the room?
-
-- **First step:** one day a week with no comment on anyone who is absent.
-
-### XI. Beauty and Making
-
-Art, music, craft, writing, garden, song. Truth carries its own splendour, and artistic gifts bring a duty to use them \[CCC 2500-2501\].
-
-- **Faithful:** making something regularly with no productive excuse, and receiving beauty on purpose.
-
-- **Fails as:** "no time for that any more", the first sign of a life that has become purely useful.
-
-- **Ask:** when did I last make something just because it was good?
-
-- **First step:** thirty protected minutes a week at your craft.
-
-### XII. Mission
+### 6. Mission
 
 Service, witness, the poor, your particular contribution. The works of mercy are how the image goes to work in the world \[CCC 2447\].
 
 - **Faithful:** one concrete, standing service, sized to your present strength, where you meet actual people.
-
 - **Fails as:** a mission that exists as a plan and not as an appointment.
-
 - **Ask:** whom, by name, did I serve this month?
-
 - **First step:** one recurring hour of service, small enough to keep.
 
-### A caution about the twelve
+### 7. Vocation
 
-Do not attempt all twelve. The point of the map is not excellence everywhere at once. It is knowing which field God is asking about now. Score each from one to five. Take the lowest. Choose one small habit for it, and add nothing new in the other eleven for ninety days. Their duties and the commandments still hold. Only the new projects wait.
+The particular shape your life is given: your state of life, your calling, the question you may still be discerning, and the long faithfulness it asks. Each one should lead the life the Lord has assigned (1 Corinthians 7:17). The lay faithful have their own share in Christ's priestly, prophetic and kingly office, and it is exercised in the ordinary circumstances of family and work \[CCC 898-900\]. Marriage and holy orders are the sacraments at the service of communion \[CCC 1533\]; the consecrated and the single, faithfully lived, are no less a call. This field is last, and often empty at first, because a vocation is discerned in prayer, over time, with the Church, and never by a book or an app.
+
+- **Faithful:** your state of life and your call written in one sentence; one conversation a season with someone who can speak into it; the next step taken, and the question closed for a while.
+- **Fails as:** endless discernment that never lands, or a vocation treated as a career move, chosen for what it gives rather than for whom it serves.
+- **Ask:** what has God already made clear, that I keep reopening?
+- **First step:** write your state of life and your call in one sentence, and show it to one person who knows you.
+
+### A caution about the eight
+
+Do not attempt all eight. The point of the map is not excellence everywhere at once. It is knowing which field God is asking about now. Score each from one to five. Take the lowest. Choose one small habit for it, and add nothing new in the other seven for ninety days. Their duties and the commandments still hold. Only the new projects wait.
 
 And look for the field you skimmed while reading.
 
@@ -366,11 +292,9 @@ And look for the field you skimmed while reading.
 
 *As each has received a gift, use it to serve one another, as good stewards of God's varied grace.* (1 Peter 4:10)
 
-Everything so far fits on one page. One Master entrusts one steward with twelve fields in three rings, and in every field the same four movements take place. That is the whole model. The rest of this chapter unfolds it.
+Everything so far fits on one page. One Master entrusts one steward with eight fields, numbered 0 to 7: the soul at the centre, and seven fields around it in three rings. In every field the same four movements take place. That is the whole model. The rest of this chapter unfolds it.
 
-
-
-the steward's model · one centre, three rings, twelve fields
+&#91;embedded content: the steward's model · one centre, three rings, twelve fields\]
 
 Read it from the centre outward. Light is given at the centre, passes through the person, orders the household, and lands in the world.
 
@@ -384,15 +308,15 @@ The parable shows why. The servant who buried his talent explains himself: I kne
 
 The New Testament word for steward is *oikonomos*, the manager of a household. The model keeps that shape.
 
-**The Person: what I am.** Body, Mind, Soul, Heart. These are the four with which the great commandment asks us to love God: heart, soul, mind and strength (Mark 12:30). They come first because you cannot give what you have not received, and because the self is the first thing entrusted to you.
+**The Person: what I am.** 1 Body and Mind, 2 Heart and Relationships. The self, and the people given to it: what the great commandment names when it asks us to love God with heart, soul, mind and strength (Mark 12:30). They come first because you cannot give what you have not received, and because the self is the first thing entrusted to you. The soul itself stands apart, at the centre, as field 0.
 
-**The Household: what I keep.** Time, Finance, Work, Home. These are the steward's proper desk: the hours, the goods, the labour and the place put into your hands. Here love takes structure, or stays a feeling.
+**The Household: what I keep.** 3 Home and Stewardship, 4 Work. These are the steward's proper desk: the hours, the goods, the labour and the place put into your hands. Here love takes structure, or stays a feeling.
 
-**The World: what I give.** Creation, Speech, Beauty and Making, Mission. This is the second half of the commandment, the neighbour, widened to the earth itself. Here the light leaves your hands.
+**The World: what I give.** 5 Creation, 6 Mission, 7 Vocation. This is the second half of the commandment, the neighbour, widened to the earth itself, and the particular shape your own life is given. Here the light leaves your hands.
 
 The rings are an order of flow and not a ranking of worth. Inner serves outer. A person who polishes the inner ring and never reaches the outer has built a lamp and put it under a basket. A person who pours out the outer ring while the inner one starves is a channel and not a reservoir, and runs dry.
 
-In this book and in the app each ring has a colour, like the glass of a rose window: ruby for the Person, sapphire for the Household, emerald for the World. Gold is kept for the centre. The colours are an aid to memory. They are not the Church's liturgical colours.
+In this book and in the app each field has a colour, like a pane of glass in a rose window: gold for the centre, then green, red, blue, purple, orange, grey and yellow for the seven around it. The same colours mark the folders, the notes and the calendars of a life ordered this way. They are an aid to memory. They are not the Church's liturgical colours.
 
 A picture may help, and every Catholic already carries it. Think of a parish church. At its heart a lamp burns before the tabernacle. Christ is there, and that is the centre. Around him stands **the temple**, which is you: your body is a temple of the Holy Spirit (1 Corinthians 6:19). Around the temple is **the house**: the home, which the Church calls the domestic church \[CCC 1655-1657\]. Beyond the doors lies **the field**: the field is the world (Matthew 13:38), and every Mass ends by sending us into it. Lamp, temple, house, field. That is the whole model, seen from the pew.
 
@@ -400,13 +324,10 @@ A picture may help, and every Catholic already carries it. Think of a parish chu
 
 In every field, faithful stewardship moves through the same four acts. They echo the four things the Lord did with bread: he took it, blessed it, broke it and gave it (Matthew 26:26). This is an analogy and not a new doctrine, but it rests on one. By baptism every Christian shares in the priesthood of Christ, and the Church teaches that the works, prayers, family life, daily labour, rest and even the hardships of the laity become spiritual sacrifices, offered to the Father with the Lord's Body in the Eucharist \[CCC 901\]. Saint Paul says the same: present your bodies as a living sacrifice (Romans 12:1). Stewardship is what the weekday brings to the altar on Sunday, where it is joined to Christ's one sacrifice by the hands of the priest \[CCC 1368\].
 
-1.  **Receive.** Name what was given, and give thanks for it. Gratitude is not a mood. It is the accurate recognition that this was not mine first. Nothing can be stewarded that is still being treated as owned.
-
-2.  **Bless.** Set it in its place under God. What is this field for? What does it outrank, and what outranks it? This is the ordering of love, done one field at a time.
-
-3.  **Spend.** Put it to work at a cost. Bread that is never broken feeds no one, and a talent never risked earns nothing. Here belong the habit, the practice and the kept appointment.
-
-4.  **Return.** Hand it back. Give it to someone, and give an account of it to God. The evening examen is the daily form of this. The final form is the evening of life.
+1. **Receive.** Name what was given, and give thanks for it. Gratitude is not a mood. It is the accurate recognition that this was not mine first. Nothing can be stewarded that is still being treated as owned.
+2. **Bless.** Set it in its place under God. What is this field for? What does it outrank, and what outranks it? This is the ordering of love, done one field at a time.
+3. **Spend.** Put it to work at a cost. Bread that is never broken feeds no one, and a talent never risked earns nothing. Here belong the habit, the practice and the kept appointment.
+4. **Return.** Hand it back. Give it to someone, and give an account of it to God. The evening examen is the daily form of this. The final form is the evening of life.
 
 Each movement has a counterfeit. Without Receive you get entitlement. Without Bless, disorder. Without Spend, the buried talent. Without Return, the barn-builder of Luke 12, who lays up treasure for himself and is not rich toward God (Luke 12:21).
 
@@ -426,9 +347,9 @@ The Church reads the Old Testament as full of figures that point to him \[CCC 12
 
 **The keeper of the key.** Eliakim the steward received the key of the house of David (Isaiah 22:20-22). The risen Christ holds it (Revelation 3:7).
 
-One more image is offered as an application and not as a figure Scripture itself draws. The high priest carried twelve stones on his breastplate, on his heart before the Lord (Exodus 28:21, 29). Those stones are the twelve tribes, fulfilled in the Church. But the steward may take courage from them. You do not carry your twelve fields alone. The High Priest carries you, and all you hold, on his heart.
+One more image is offered as an application and not as a figure Scripture itself draws. The lampstand in the sanctuary carried seven lamps (Exodus 25:37), and John saw the risen Christ walking among seven golden lampstands, which are the churches (Revelation 1:12-13, 20). The steward may take courage from them. The seven fields around your centre are not lit by you alone. He walks among them, and he carries you, and all you hold, on his heart.
 
-### Three threads through all twelve
+### Three threads through all the fields
 
 Scripture names three things that are not fields. They run through every field.
 
@@ -446,7 +367,7 @@ The steward in this model is not a solitary achiever. Four truths keep the model
 
 **Christ is the faithful Son.** He is more than a servant in the house. He is the Son set over it (Hebrews 3:6), the image of the invisible God (Colossians 1:15), who received everything from the Father and handed everything back. We do not imitate him from outside. We are members of his Body, and our stewardship is a share in his. Apart from me you can do nothing (John 15:5).
 
-**The baptised share his three offices.** As priest, the steward offers each field to God \[CCC 901\]. As prophet, the steward bears witness in word and life \[CCC 904-905\]. As king, the steward first governs the self and then orders the world toward justice, because ruling in Christ means serving \[CCC 908-909\]. The twelve fields are where those three offices are actually exercised.
+**The baptised share his three offices.** As priest, the steward offers each field to God \[CCC 901\]. As prophet, the steward bears witness in word and life \[CCC 904-905\]. As king, the steward first governs the self and then orders the world toward justice, because ruling in Christ means serving \[CCC 908-909\]. The eight fields are where those three offices are actually exercised.
 
 **The Holy Spirit does the work.** No one orders their loves by technique. The love of God is poured into our hearts by the Holy Spirit (Romans 5:5), and it is the Spirit who makes us children and not slaves \[CCC 736\]. His seven gifts make a person quick to follow where grace leads \[CCC 1830-1831\]. Every movement in this model begins by asking him.
 
@@ -602,15 +523,11 @@ A gentle test may help. Does my darkness leave me still wanting God and still ab
 
 ### Rules for a dark season
 
-1.  **Make no large changes.** Do not resign, end the relationship or send the message. States pass. Decisions made inside them do not.
-
-2.  **Reduce the rule to its floor. Do not abandon it.** One anchor of prayer, Sunday Mass, one person who knows. If you are too ill to manage even that, the Church does not hold it against you. The floor is for dryness, not for the sickbed.
-
-3.  **Let the basics be the discipline.** Light, movement, food, sleep and company. In this season a walk is an act of obedience to the God who made the body.
-
-4.  **Tell one trustworthy person the whole of it.** Secrecy feeds the dark. Speech is the solvent.
-
-5.  **Keep doing the next good thing.** The work does not require the feelings. A small act of love done while feeling nothing is worth no less than one done on a wave. Its worth is the love in it.
+1. **Make no large changes.** Do not resign, end the relationship or send the message. States pass. Decisions made inside them do not.
+2. **Reduce the rule to its floor. Do not abandon it.** One anchor of prayer, Sunday Mass, one person who knows. If you are too ill to manage even that, the Church does not hold it against you. The floor is for dryness, not for the sickbed.
+3. **Let the basics be the discipline.** Light, movement, food, sleep and company. In this season a walk is an act of obedience to the God who made the body.
+4. **Tell one trustworthy person the whole of it.** Secrecy feeds the dark. Speech is the solvent.
+5. **Keep doing the next good thing.** The work does not require the feelings. A small act of love done while feeling nothing is worth no less than one done on a wave. Its worth is the love in it.
 
 ### Suffering is not wasted
 
@@ -630,17 +547,17 @@ A book can convince you. It cannot remind you at seven in the morning. The Illum
 
 Nothing in the app is new. Every screen is a chapter of this booklet in working form.
 
-| In the booklet                     | In the app                                      | What you do there                                                                                                                                                       |
-|------------------------------------|-------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1\. One Light                      | The rose window on **Today**                    | See twelve petals, one per field, coloured by ring and lit by degrees. The centre is never yours to light.                                                              |
-| 2\. The Light Made Flesh           | The **Examen**, step five                       | Sort the day's hard moments into sin, wound and limit, and bring each to God as what it is. Sin goes on to confession, where a confessor judges what you cannot.        |
-| 3\. Taken into a Body              | **Rule**: parish, sacraments, your three people | Name your parish, set your confession interval, name who is ahead of you, beside you and behind you.                                                                    |
-| 4\. One Steward                    | The **season's field**                          | Choose the one field God is asking about, for about ninety days.                                                                                                        |
-| 5\. The Twelve Fields              | **Fields**                                      | Open any field: what it holds, its end, its disorder, questions to examine, a ladder of four rungs.                                                                     |
-| 6\. The Steward's Model            | The four movements inside each field            | Write one line each for Receive, Bless, Spend and Return. Spend becomes a practice in your Rule.                                                                        |
-| 7\. The Craft of Change            | **Rule** and **Today**                          | Practices with fixed times, tied to anchors, small enough for your worst week, with a floor of three lines.                                                             |
-| 8\. When the Light Seems to Go Out | **Floor mode**                                  | One switch reduces Today to your three floor lines. Nothing is lost and nothing is counted against you.                                                                 |
-| Prayers and the Church's year      | **Year** and **Words to keep**                  | The General Roman Calendar, day by day, with the rank and colour of each celebration, and one sentence to carry each day. Your own diocese's calendar takes precedence. |
+| In the booklet | In the app | What you do there |
+| --- | --- | --- |
+| 1. One Light | The rose window on **Today** | See seven petals around a gold centre, one per field, each in its own colour and lit by degrees. The centre is the soul, where the lamp burns; the light there is not yours to make. |
+| 2. The Light Made Flesh | The **Examen**, step five | Sort the day's hard moments into sin, wound and limit, and bring each to God as what it is. Sin goes on to confession, where a confessor judges what you cannot. |
+| 3. Taken into a Body | **Rule**: parish, sacraments, your three people | Name your parish, set your confession interval, name who is ahead of you, beside you and behind you. |
+| 4. One Steward | The **season's field** | Choose the one field God is asking about, for about ninety days. |
+| 5. The Fields, 0 to 7 | **Fields** | Open any field: what it holds, its end, its disorder, questions to examine, a ladder of four rungs. |
+| 6. The Steward's Model | The four movements inside each field | Write one line each for Receive, Bless, Spend and Return. Spend becomes a practice in your Rule. |
+| 7. The Craft of Change | **Rule** and **Today** | Practices with fixed times, tied to anchors, small enough for your worst week, with a floor of three lines. |
+| 8. When the Light Seems to Go Out | **Floor mode** | One switch reduces Today to your three floor lines. Nothing is lost and nothing is counted against you. |
+| Prayers and the Church's year | **Year** and **Words to keep** | The General Roman Calendar, day by day, with the rank and colour of each celebration, and one sentence to carry each day. Your own diocese's calendar takes precedence. |
 
 The app also keeps a diary. Each evening it asks for seven things you are grateful for, three intentions you are praying for, and one act of service, done or planned. It can be saved or printed as a small book. Gratitude is the first movement, Receive, practised every day.
 
@@ -654,7 +571,7 @@ The app is built to obey the theology. Each promise below is a doctrine turned i
 
 **It does not measure grace.** A lit petal records a practice kept. It says nothing about the state of your soul, and the app says so on the screen (Chapter 6).
 
-**It asks about one field.** The other eleven stay visible and quiet (Chapter 4).
+**It asks about one field.** The other seven stay visible and quiet (Chapter 4).
 
 **It lets you begin again without penalty.** A missed day is simply not marked. There is nothing to catch up (Chapter 6).
 
@@ -672,35 +589,21 @@ It is not a spiritual director, a confessor or a diagnosis. It cannot absolve, a
 
 This is the one format. It takes about an hour the first time, and it is the same in the app and on paper. Do the steps in order. Do not skip the last one.
 
-1.  **Pray first.** Before you plan anything, ask. "Lord, show me what you have given me, and where you are asking." A rule made without prayer is a self-improvement plan.
-
-2.  **Walk the twelve fields.** For each, choose its present light: not yet begun, kindled, shining, burning or radiant. Be quick and honest. This is a glance, not a verdict.
-
-3.  **Choose one field for the season.** Usually the dimmest, or the one you skimmed. Add nothing new in the other eleven for about ninety days.
-
-4.  **Write its four movements.** One line each.
-
-    - *Receive:* what have I been given here? Thank God for it by name.
-
-    - *Bless:* what is this field for, and where does it stand among my loves?
-
-    - *Spend:* what one small practice will put it to work? Give it a time and a place.
-
-    - *Return:* to whom is this given, and when will I review it before God?
-
-5.  **Set your floor.** Three lines you will keep in your worst week. For most people: two minutes of prayer morning and night, Sunday Mass, one honest conversation a week.
-
-6.  **Fix three anchors in the day.** A morning offering before the phone. A midday pause, the Angelus or one deliberate breath and a word. An evening examen of five minutes.
-
-7.  **Mark the week, the month and the year.** Sunday Mass and real rest. Confession on a set interval. One review of your finances. The Church's seasons kept, with one thing added and one removed in Advent and Lent.
-
-8.  **Check the Church's own minimum.** The five precepts are the floor beneath every floor: Mass on Sundays and holy days, confession at least once a year, Communion at least in the Easter season, the days of fasting and abstinence, and providing for the needs of the Church \[CCC 2041-2043\]. Illness, the care of infants and other serious reasons excuse from the Sunday obligation \[CCC 2181\].
-
-9.  **Put it in your one calendar.** Not a separate spiritual calendar. There is only one life. The app exports your anchors as calendar events.
-
+1. **Pray first.** Before you plan anything, ask. "Lord, show me what you have given me, and where you are asking." A rule made without prayer is a self-improvement plan.
+2. **Walk the fields, 0 to 7.** For each, choose its present light: not yet begun, kindled, shining, burning or radiant. Be quick and honest. This is a glance, not a verdict.
+3. **Choose one field for the season.** Usually the dimmest, or the one you skimmed. Add nothing new in the other seven for about ninety days.
+4. **Write its four movements.** One line each.
+   - *Receive:* what have I been given here? Thank God for it by name.
+   - *Bless:* what is this field for, and where does it stand among my loves?
+   - *Spend:* what one small practice will put it to work? Give it a time and a place.
+   - *Return:* to whom is this given, and when will I review it before God?
+5. **Set your floor.** Three lines you will keep in your worst week. For most people: two minutes of prayer morning and night, Sunday Mass, one honest conversation a week.
+6. **Fix three anchors in the day.** A morning offering before the phone. A midday pause, the Angelus or one deliberate breath and a word. An evening examen of five minutes.
+7. **Mark the week, the month and the year.** Sunday Mass and real rest. Confession on a set interval. One review of your finances. The Church's seasons kept, with one thing added and one removed in Advent and Lent.
+8. **Check the Church's own minimum.** The five precepts are the floor beneath every floor: Mass on Sundays and holy days, confession at least once a year, Communion at least in the Easter season, the days of fasting and abstinence, and providing for the needs of the Church \[CCC 2041-2043\]. Illness, the care of infants and other serious reasons excuse from the Sunday obligation \[CCC 2181\].
+9. **Put it in your one calendar.** Not a separate spiritual calendar. There is only one life. The app exports your anchors as calendar events.
 10. **Show it to someone.** A director, a confessor or a wise friend. A rule written alone tends to be too harsh or too vague, and you cannot tell which from inside.
-
-11. **Review each season, not each day.** At the end of ninety days, look again at the twelve, give thanks, and ask which field is next.
+11. **Review each season, not each day.** At the end of ninety days, look again at the eight, give thanks, and ask which field is next.
 
 ### The whole format on one card
 
@@ -761,13 +664,9 @@ Sacred Scripture is quoted in brief from common English translations. The psalm 
 Teaching of Pope Leo XIV, read on the Holy See's website on 5 October 2026:
 
 - [*Magnifica Humanitas*](https://www.vatican.va/content/leo-xiv/en/encyclicals/documents/20260515-magnifica-humanitas.html), encyclical letter on safeguarding the human person, 15 May 2026
-
 - [*Dilexi Te*](https://www.vatican.va/content/leo-xiv/en/apost_exhortations/documents/20251004-dilexi-te.html), apostolic exhortation on love for the poor, 4 October 2025
-
 - [Prayer intention for October 2026](https://www.vatican.va/content/leo-xiv/en/prayers/documents/20261001-popesprayer-ottobre.html), for mental health ministry
-
 - [Prayer intention for January 2026](https://www.vatican.va/content/leo-xiv/en/prayers/documents/20260107-popesprayer-gennaio.html), for prayer with the Word of God
-
 - [Index of the Holy Father's prayers](https://www.vatican.va/content/leo-xiv/en/prayers.index.html)
 
 The two works this booklet gathers: *Imago Dei Incorporata* and *Accedite et Illuminamini*.
