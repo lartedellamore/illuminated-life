@@ -2,7 +2,7 @@
 
 A Catholic rule of life across twelve fields of stewardship: a website, the book *Illuminated: The Image of God, Embodied* (62 pages, PDF), and its companion app.
 
-Live: https://lartedellamore.github.io/illuminated-life/
+Live: https://app.lartedellamore.com/ (the app itself is at /app.html)
 
 > One Master entrusts one steward with twelve fields in three rings:
 > Person (Body, Mind, Soul, Heart), Household (Time, Finance, Work, Home), World (Creation, Speech, Beauty and Making, Mission).
