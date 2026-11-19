@@ -143,7 +143,8 @@
       day: { wake: "07:00", workStart: "09:00", workEnd: "17:30", bed: "22:30", workVaries: false, restDay: 0, fixed: [], first: {} },
       // The Guide: the date it was last finished, and the answers of an interview in progress.
       guide: { done: "", draft: null, made: [] }, // made: the practices the Guide itself put in the Rule
-      prefs: { pdfVerse: true, pdfPhotos: true, region: "general", sundayFeasts: false, name: "", todayView: "list", icsFeasts: false }, meta: { lastBackup: "", calStart: "" }
+      prefs: { pdfVerse: true, pdfPhotos: true, region: "general", sundayFeasts: false, name: "", todayView: "list", icsFeasts: false, castle: true }, meta: { lastBackup: "", calStart: "", castleSeen: "" },
+      stickers: {} // sticker id -> the date it was given. Small gifts, never scores.
     };
   }
 
@@ -272,7 +273,9 @@
 
     const pf = obj(src.prefs); base.prefs.pdfVerse = pf.pdfVerse !== false; base.prefs.pdfPhotos = pf.pdfPhotos !== false;
     base.prefs.region = pf.region === "nl" ? "nl" : "general"; base.prefs.sundayFeasts = pf.sundayFeasts === true;
-    base.prefs.name = str(pf.name, 60).trim(); base.prefs.todayView = pf.todayView === "day" ? "day" : "list"; base.prefs.icsFeasts = pf.icsFeasts === true;
+    base.prefs.name = str(pf.name, 60).trim(); base.prefs.todayView = pf.todayView === "day" ? "day" : "list"; base.prefs.icsFeasts = pf.icsFeasts === true; base.prefs.castle = pf.castle !== false;
+    const stk = obj(src.stickers); IL.STICKERS.forEach((k) => { if (isISO(stk[k.id])) base.stickers[k.id] = stk[k.id]; });
+    const mt = obj(src.meta); if (isISO(mt.castleSeen)) base.meta.castleSeen = mt.castleSeen;
     const me = obj(src.meta); base.meta.lastBackup = typeof me.lastBackup === "string" && !isNaN(Date.parse(me.lastBackup)) ? new Date(Date.parse(me.lastBackup)).toISOString() : "";
     base.meta.calStart = isISO(me.calStart) && me.calStart <= todayISO() ? me.calStart : "";
     return base;
@@ -355,6 +358,8 @@
     shield: "M12 3.5 5 6v5.5c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6Z",
     guide: "M5.2 5.5h13.6a1.7 1.7 0 0 1 1.7 1.7v7.6a1.7 1.7 0 0 1-1.7 1.7h-7.3L7.6 20v-3.5H5.2a1.7 1.7 0 0 1-1.7-1.7V7.2a1.7 1.7 0 0 1 1.7-1.7ZM8 9.6h8M8 12.6h5",
     send: "M4.5 12h13M12.5 6.5 18 12l-5.5 5.5",
+    castle: "M5 20V9h3V6h2v3h4V6h2v3h3v11ZM9.5 20v-5h5v5M12 3.5v2.5M10.8 4.5h2.4",
+    x: "M6 6l12 12M18 6 6 18",
     camera: "M5 8h2.6l1.5-2.3h5.8L16.4 8H19a1.7 1.7 0 0 1 1.7 1.7v7.6A1.7 1.7 0 0 1 19 19H5a1.7 1.7 0 0 1-1.7-1.7V9.7A1.7 1.7 0 0 1 5 8ZM12 16.4a3.1 3.1 0 1 0 0-6.2 3.1 3.1 0 0 0 0 6.2Z"
   };
   const icon = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="${n === "more" ? 2.6 : 1.5}" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[n] || ICONS.spark}"/></svg>`;
@@ -686,6 +691,7 @@
   const isEvening = () => new Date().getHours() >= 17;
 
   function Diary() {
+    if (!state.stickers.diary && Object.keys(state.diary).some((k) => isISO(k) && Object.values(state.diary[k]).some((v) => typeof v === "string" ? v.trim() : v))) setTimeout(() => giveSticker("diary"), 400);
     if (ui.diaryView === "examen") return Examen();
     const t = todayISO(), d = viewDay(), j = jGet(d), g = j.g || {}, pr = j.p || {};
     const v = verseFor(fromISO(d));
@@ -944,11 +950,13 @@
     ...(GUIDE ? [["calendar", "Into my calendar", "Hand your Rule to Apple, Google or Outlook as a file", "send"]] : []),
     ["treasury", "The Treasury", "First fruits, and an order for the rest", "coin"],
     ["prayers", "Prayers of the steward", "Morning, night, and the hard days", "flame"],
+    ["stickers", "The sticker shelf", "Small gifts for firsts. Never scores", "star"],
+    ["doorway", "A doorway, not a destination", "Six commitments to the Church, for a priest to read", "castle"],
     ["companions", "Companions", "Other Catholic apps that give you the prayers themselves", "star"],
     ["backup", "Keep my words safe", "Back up, restore, or erase what is on this device", "shield"],
     ["about", "About this app", "What it is, and what it must never become", "book"]
   ];
-  const SUBS = { model: Model, icon: Icono, review: Review, year: Year, treasury: Treasury, prayers: Prayers, companions: Companions, backup: Backup, about: About };
+  const SUBS = { model: Model, icon: Icono, review: Review, year: Year, treasury: Treasury, prayers: Prayers, companions: Companions, backup: Backup, about: About, stickers: Stickers, doorway: Doorway };
   if (GUIDE) { SUBS.guide = () => G.guide(); SUBS.calendar = () => G.calendar(); }
   function More() {
     if (!ui.sub || !SUBS[ui.sub]) return `<section class="stack"><h1 class="h1">More</h1><p class="lede">The model beneath the app, and the tools around it.</p>
@@ -1180,7 +1188,11 @@
       <h2 class="h2 mt">What it must never become</h2><p>It is not a spiritual director, a confessor or a diagnosis. It cannot absolve, and it cannot discern a vocation. If you carry trauma, depression, addiction or disordered eating, please work with a qualified professional, and let this accompany that work.</p>
       <p>If the app ever feels like a judge and not a trellis, switch on floor mode, or close it for a season. The anchors are enough.</p>
       <h2 class="h2 mt">If you are in crisis</h2>${crisisNote()}
-      <h2 class="h2 mt">The three colours</h2><p>${esc(IL.COLOUR_NOTE)}</p>${ringLegend()}
+      <h2 class="h2 mt">The castle at the door</h2><p>Once a day, when you open the app, the Interior Castle is drawn: seven dwellings, and a small light walking inward to where the King dwells. It is after St Teresa of Avila, and it takes six seconds. Tap it to go in sooner.</p>
+      <label class="check"><input type="checkbox" id="pref-castle" data-check="prefs.castle" ${state.prefs.castle ? "checked" : ""}><span>Show the castle each morning</span></label>
+      <p><button class="link" data-act="castleopen">Watch it now</button></p>
+      <h2 class="h2 mt">The eight colours</h2><p>${esc(IL.COLOUR_NOTE)}</p>${ringLegend()}
+      <h2 class="h2 mt">A doorway, not a destination</h2><p>${esc(IL.COMMITMENTS.lede)}</p><p><button class="link" data-act="sub" data-s="doorway">Read the six commitments</button></p>
       <h2 class="h2 mt">On authority</h2><p>This app is a private work. It is not an official text of the Church, and it carries no imprimatur. Use it alongside a parish, a confessor and the sacraments, never in place of them.</p><p>It is meant to agree in every point with Sacred Scripture and the Magisterium, and it is submitted to the Church's judgement. Catechism numbers are given so that each claim can be checked.</p>
       <h2 class="h2 mt">Other apps</h2><p>The apps named under Companions are independent works. We are not affiliated with them, and their names belong to their owners.</p></div>
       <p class="creed">Come to him and be enlightened.</p>`;
@@ -1218,6 +1230,52 @@
     return k.sel ? k : null;
   }
   let batching = 0, drawLater = false;
+  /* ───────── the chapel: the castle at the door, and the sticker shelf ─────────
+     A sticker is given once, for a first. It records that something began; it measures nothing, and it is never taken away. */
+  const stickerById = (id) => IL.STICKERS.find((k) => k.id === id);
+  function stickerArt(k, size) {
+    const f = fieldById(k.field), cls = f ? rc(f.id) : "rc-f0", px = size || 72;
+    return `<span class="sticker ${cls}" style="--px:${px}px"><span class="sticker-paper"><span class="sticker-badge">${icon(k.icon, Math.round(px * 0.46))}</span></span></span>`;
+  }
+  function giveSticker(id) {
+    const k = stickerById(id); if (!k || state.stickers[id]) return;
+    state.stickers[id] = todayISO(); save();
+    ui.stickerGift = id; render();
+    clearTimeout(ui.stickerTimer); ui.stickerTimer = setTimeout(() => { ui.stickerGift = null; render(); }, 4200);
+  }
+  function stickerGift() {
+    const k = ui.stickerGift && stickerById(ui.stickerGift); if (!k) return "";
+    return `<div class="gift" role="status"><div class="gift-card">${stickerArt(k, 84)}<div><span class="rub">A sticker, for a first</span><b>${esc(k.name)}</b><p>${esc(k.line)}</p></div><button class="icobtn" data-act="giftclose" aria-label="Close">${icon("x", 18)}</button></div></div>`;
+  }
+  function Stickers() {
+    const have = IL.STICKERS.filter((k) => state.stickers[k.id]), left = IL.STICKERS.length - have.length;
+    return `<h1 class="h1">The sticker shelf</h1><p class="lede">Small gifts, never scores. Each is given once, for a first, and none is ever taken away.</p>
+      <div class="pane pad shelf">${IL.STICKERS.map((k) => { const got = state.stickers[k.id];
+        return `<div class="shelf-item ${got ? "" : "unlit"}">${stickerArt(k, 68)}<b>${esc(k.name)}</b><span>${got ? esc(prettyISO(got)) : "Not yet"}</span></div>`; }).join("")}</div>
+      ${have.length ? `<div class="pane pad"><span class="rub">What they say</span>${have.map((k) => `<p class="shelf-line"><b>${esc(k.name)}.</b> ${esc(k.line)}</p>`).join("")}</div>` : ""}
+      <p class="note">${left ? left + (left === 1 ? " sticker is" : " stickers are") + " still to come. They arrive by themselves: light a field, choose a season, write one evening, hand the Rule to your calendar." : "The shelf is full. Nothing more to collect; only the life itself."}</p>
+      <p class="note">A sticker is not a reward for being good. It marks a beginning, the way a parish marks a baptism: once, gladly, and for ever.</p>`;
+  }
+  // The Interior Castle: shown once a day at the door, and whenever asked for. Tap anywhere to go in.
+  const castleDue = () => state.prefs.castle && state.meta.castleSeen !== todayISO();
+  function castleOverlay() {
+    if (!ui.castle) return "";
+    const C = IL.CASTLE;
+    return `<div class="castle" id="castle" role="dialog" aria-label="${esc(C.title)}" data-act="castleclose"><div class="castle-in">
+      <span class="rub">${esc(C.title)}</span>${C.svg()}
+      <p class="castle-line">${esc(C.line)}</p><p class="castle-after">${esc(C.after)}</p>
+      <p class="castle-tap">Tap to go in</p></div></div>`;
+  }
+  function openCastle() { ui.castle = true; render(); clearTimeout(ui.castleTimer); ui.castleTimer = setTimeout(closeCastle, 9000); }
+  function closeCastle() { if (!ui.castle) return; clearTimeout(ui.castleTimer); ui.castle = false; state.meta.castleSeen = todayISO(); save(); render(); giveSticker("castle"); }
+  function Doorway() {
+    const C = IL.COMMITMENTS;
+    return `<h1 class="h1">${esc(C.title)}</h1><p class="lede">${esc(C.lede)}</p>
+      <div class="pane pad"><ol class="laws">${C.items.map(([a, b]) => `<li><b>${esc(a)}</b>${esc(b)}</li>`).join("")}</ol></div>
+      <blockquote class="quote">${esc(C.close)}<cite>The Church and Internet, 2002, paraphrased</cite></blockquote>
+      <p class="note">Shown to a priest before publication. If you are a priest or a pastor reading this and you see an error, write, and it will be corrected.</p>`;
+  }
+
   function render(opts) {
     if (batching) { drawLater = true; return; } // IL.api.batch draws once, at the end
     const o = opts || {}, keep = focusKey(document.activeElement), y = window.scrollY;
@@ -1231,7 +1289,7 @@
       <div class="toast" id="toast" role="status" ${ui.toast ? "" : "hidden"}>${esc(ui.toast || "")}</div>
       ${ui.updated && !ui.later.update ? `<div class="update" id="update" role="status"><span>Updated.</span><button class="link" data-act="reload">Reload</button><button class="link dim" data-act="later" data-k="update">Later</button></div>` : ""}
       <nav class="tabbar" aria-label="Sections"${still}>${NAV.map(([id, label, ic]) => `<button data-act="tab" data-t="${id}" ${ui.tab === id ? 'aria-current="page"' : ""}>${icon(ic, 22)}<span>${label}</span></button>`).join("")}</nav>
-      ${ui.tab === "more" && ui.sub === "year" ? DaySheet() : ""}${pv}
+      ${ui.tab === "more" && ui.sub === "year" ? DaySheet() : ""}${pv}${stickerGift()}${castleOverlay()}
       <div class="book" aria-hidden="true">${Book()}</div>`;
     pTidy();
     if (keep) {
@@ -1442,13 +1500,13 @@
     if (!isISO(state.meta.calStart)) { state.meta.calStart = todayISO(); save(); writeNow(); }
     const files = makeICSByField({ feasts: state.prefs.icsFeasts });
     return files.reduce((p, f) => p.then((ok) => saveFile(f.name, f.text, "text/calendar;charset=utf-8").then((k) => ok && k)), Promise.resolve(true))
-      .then((ok) => { if (ok) flash(files.length + (files.length === 1 ? " file saved. " : " files saved. ") + "Open each one and choose the calendar with the same number."); return ok; });
+      .then((ok) => { if (ok) giveSticker("calendar"); if (ok) flash(files.length + (files.length === 1 ? " file saved. " : " files saved. ") + "Open each one and choose the calendar with the same number."); return ok; });
   }
   // Hands the whole Rule to the calendar as one file. The first time, today is remembered as the day the dates are counted from.
   function exportCalendar() {
     if (!canSave()) return Promise.resolve(false);
     if (!isISO(state.meta.calStart)) { state.meta.calStart = todayISO(); save(); writeNow(); } // written at once: the file about to be saved depends on it
-    return saveFile("illuminated-life.ics", makeICS({ feasts: state.prefs.icsFeasts }), "text/calendar;charset=utf-8").then((ok) => { if (ok) flash(PREVIEW ? "Saved as a zip. Open it, then open the calendar file inside." : "Calendar file saved. Open it to add your Rule."); return ok; });
+    return saveFile("illuminated-life.ics", makeICS({ feasts: state.prefs.icsFeasts }), "text/calendar;charset=utf-8").then((ok) => { if (ok) giveSticker("calendar"); if (ok) flash(PREVIEW ? "Saved as a zip. Open it, then open the calendar file inside." : "Calendar file saved. Open it to add your Rule."); return ok; });
   }
   // A backup is checked and normalised before anything is stored. A bad file changes nothing.
   function restore(text) {
@@ -1524,7 +1582,7 @@
     flash("Restored" + (recs.length ? ", with " + nPhotos(recs.length) : "") + (bad ? ". " + nPhotos(bad) + " could not be read" : ""));
   }
   function markBackup() { state.meta.lastBackup = new Date().toISOString(); save(); const el = document.getElementById("last-backup"); if (el) el.textContent = "Last backup: " + fmt(new Date(), { day: "numeric", month: "long", year: "numeric" }); }
-  function setFocusField(f) { state.focus = { field: f.id, since: todayISO() }; ui.confirmFocus = null; delete ui.later.season; save(); render(); flash(f.name + " is your field for this season"); }
+  function setFocusField(f) { state.focus = { field: f.id, since: todayISO() }; ui.confirmFocus = null; delete ui.later.season; save(); render(); giveSticker("season"); flash(f.name + " is your field for this season"); }
 
   /* ───────── the calendar: focus and keys ───────── */
   function focusDay(isoDate) {
@@ -1832,7 +1890,7 @@
       const c = document.getElementById("field-" + id); if (c) { c.scrollIntoView({ block: "start" }); window.scrollBy(0, -70); const b = c.querySelector(".field-head"); if (b) { try { b.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } } } },
     keep: (el) => { const r = state.rule.find((x) => x.id === el.dataset.id); if (!r) return; const k = periodKey(r.cadence); r.done = r.done === k ? null : k; el.setAttribute("aria-pressed", r.done === k ? "true" : "false"); save(); },
     floorkeep: (el) => { const i = Number(el.dataset.i); if (!(i >= 0 && i < 3)) return; state.floorDay.done[i] = !state.floorDay.done[i]; el.setAttribute("aria-pressed", state.floorDay.done[i] ? "true" : "false"); save(); },
-    climb: (el) => { const f = fieldById(el.dataset.f); if (!f) return; const r = state.fields[f.id]; if (r.level >= 4) return; r.level += 1; ui.gild = f.id; save(); render(); flash(f.name + ": " + LEVELS[r.level]); setTimeout(() => { ui.gild = null; }, 1500); },
+    climb: (el) => { const f = fieldById(el.dataset.f); if (!f) return; const r = state.fields[f.id]; if (r.level >= 4) return; r.level += 1; ui.gild = f.id; save(); render(); flash(f.name + ": " + LEVELS[r.level]); setTimeout(() => { ui.gild = null; }, 1500); if (r.level === 1) giveSticker("field-" + f.id); if (r.level === 4) giveSticker("radiant"); },
     setlevel: (el) => { const r = state.fields[el.dataset.f], n = Number(el.dataset.l); if (!r || !(n >= 1 && n <= 4)) return; r.level = r.level === n ? n - 1 : n; save(); render(); },
     focus: (el) => { const f = fieldById(el.dataset.f); if (!f) return; if (state.focus && state.focus.field === f.id) return;
       if (state.focus && fieldById(state.focus.field)) { ui.confirmFocus = f.id; render(); const y = root.querySelector('[data-act="focusyes"]'); if (y) { try { y.focus({ preventScroll: true }); } catch (e) { /* older browsers */ } y.scrollIntoView({ block: "nearest" }); } return; }
@@ -1853,6 +1911,9 @@
     editrule: (el) => { ui.editRule = ui.editRule === el.dataset.id ? null : el.dataset.id; renderAnchored(`[data-act="editrule"][data-id="${cssq(el.dataset.id)}"]`); },
     delrule: (el) => { state.rule = state.rule.filter((r) => r.id !== el.dataset.id); save(); render(); flash("Removed from your Rule"); },
     ics: () => { exportCalendar(); },
+    castleclose: () => { closeCastle(); },
+    castleopen: () => { openCastle(); },
+    giftclose: () => { ui.stickerGift = null; render(); },
     icsfields: () => { exportCalendarByField(); },
     todayview: (el) => { state.prefs.todayView = el.dataset.v === "day" ? "day" : "list"; save(); render(); },
     print: () => { ui.printKind = "rule"; render(); setTimeout(() => window.print(), 60); },
@@ -2011,6 +2072,7 @@
 
   if (!readHash()) { ui.tab = "today"; }
   render({ nav: true });
+  if (castleDue()) setTimeout(openCastle, 250); // the castle at the door, once a day
   pushRoute(true);
   if (loadFailed) flash("Your saved words could not be read. Nothing has been overwritten. Restore a backup from More.");
   // Can this browser window keep photographs? Once that is known, the Diary shows the card or the note, and stray pictures are cleared.
