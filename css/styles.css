@@ -776,3 +776,52 @@ details.help .note { margin: 0 0 14px; }
   .rvrow { padding-inline: 12px; }
 }
 @media (max-width: 480px) { .ganswer { padding-left: 0; } }
+
+/* ── the chapel: pastel paper, a floating tab bar, the castle at the door, the sticker shelf ── */
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --paper: #FBFAF7; --bar: rgba(251, 250, 247, 0.9); } }
+:root[data-theme="light"] { --paper: #FBFAF7; --bar: rgba(251, 250, 247, 0.9); }
+body { background: var(--paper); background-image: radial-gradient(120% 70% at 50% -10%, var(--gold-soft) 0, transparent 60%), linear-gradient(180deg, #F3F7FB 0, var(--paper) 42%); background-attachment: fixed; }
+.top { border-bottom-color: transparent; box-shadow: 0 1px 0 var(--line); }
+.top::after { content: ""; position: absolute; left: 50%; bottom: -1px; width: 56px; height: 2px; transform: translateX(-50%); border-radius: 2px; background: var(--gold); opacity: 0.8; }
+.pane { border-radius: 18px; border-color: var(--line2); box-shadow: 0 1px 2px rgba(31, 45, 61, 0.03), 0 10px 30px -24px rgba(31, 45, 61, 0.25); }
+.tabbar { left: 14px; right: 14px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); border: 1px solid var(--line2); border-radius: 22px; padding: 6px 4px; box-shadow: 0 10px 30px -14px rgba(31, 45, 61, 0.35); }
+.tabbar button { border-radius: 16px; }
+.tabbar button[aria-current="page"] { background: var(--gold-soft); }
+.body { padding-bottom: 124px; }
+@media (min-width: 720px) { .tabbar { max-width: 680px; margin: 0 auto; } }
+
+.castle { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: radial-gradient(90% 70% at 50% 40%, #FBF5E6 0, #EEF3F8 70%, #E6EEF6 100%); animation: fade 0.5s ease both; cursor: pointer; }
+.castle-in { width: min(100%, 420px); text-align: center; }
+.castle-in .rub { margin-bottom: 4px; }
+.castle-svg { width: min(78vw, 320px); height: auto; display: block; margin: 0 auto; }
+.castle-svg .room { fill: var(--rc-soft, var(--blue)); stroke: var(--rc, var(--gold-pale)); stroke-width: 0.9; opacity: 0.35; animation: room-lit 1s ease both; animation-delay: calc(var(--d) + 0.6s); }
+.castle-svg .r1 { --rc: var(--f1); --rc-soft: var(--f1-soft); } .castle-svg .r2 { --rc: var(--f2); --rc-soft: var(--f2-soft); } .castle-svg .r3 { --rc: var(--f3); --rc-soft: var(--f3-soft); } .castle-svg .r4 { --rc: var(--f4); --rc-soft: var(--f4-soft); } .castle-svg .r5 { --rc: var(--f5); --rc-soft: var(--f5-soft); } .castle-svg .r6 { --rc: var(--f6); --rc-soft: var(--f6-soft); } .castle-svg .r7 { --rc: var(--f7); --rc-soft: var(--f7-soft); }
+.castle-svg .way { fill: none; stroke: var(--gold); stroke-width: 0.8; stroke-dasharray: 2 3; opacity: 0.6; }
+.castle-svg .king { fill: var(--gold); animation: king 1.2s ease both 4.6s; }
+.castle-svg .king-halo { opacity: 0; animation: halo 1.6s ease both 4.4s; }
+.castle-svg .soul-core { fill: #FFFFFF; stroke: var(--gold-ink); stroke-width: 0.8; }
+.castle-svg .soul-glow { fill: var(--gold); opacity: 0.35; }
+.castle-line { font-family: var(--serif); font-style: italic; font-size: 21px; line-height: 1.35; color: var(--ink2); margin: 16px 0 4px; opacity: 0; animation: appear 1s ease both 4.8s; text-wrap: balance; }
+.castle-after { font-size: 12px; letter-spacing: 0.06em; color: var(--dim); margin: 0; opacity: 0; animation: appear 1s ease both 5.4s; }
+.castle-tap { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold-ink); margin: 22px 0 0; opacity: 0; animation: appear 1s ease both 2s; }
+@keyframes room-lit { to { opacity: 1; } }
+@keyframes king { from { r: 9; } to { r: 13; } }
+@keyframes halo { to { opacity: 1; } }
+@keyframes appear { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .castle-svg .room, .castle-line, .castle-after, .castle-tap, .castle-svg .king-halo { animation: none; opacity: 1; } }
+
+.sticker { display: inline-grid; place-items: center; width: var(--px); height: var(--px); flex: 0 0 auto; }
+.sticker-paper { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 3px var(--rc-line), 0 6px 14px -8px rgba(31, 45, 61, 0.45); transform: rotate(-6deg); }
+.sticker-badge { display: grid; place-items: center; width: 74%; height: 74%; border-radius: 50%; background: var(--rc-soft); color: var(--rc); }
+.shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 16px 8px; text-align: center; }
+.shelf-item { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.shelf-item b { font-family: var(--serif); font-weight: 500; font-size: 15px; line-height: 1.2; }
+.shelf-item span { font-size: 11.5px; color: var(--dim); }
+.shelf-item.unlit .sticker-paper { filter: grayscale(1); opacity: 0.35; transform: none; box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 3px var(--line); }
+.shelf-line { font-size: 14.5px; color: var(--ink2); margin: 6px 0 0; }
+.gift { position: fixed; left: 0; right: 0; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); z-index: 45; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; }
+.gift-card { pointer-events: auto; display: flex; align-items: center; gap: 14px; max-width: 420px; background: var(--card); border: 1px solid var(--gold-pale); border-radius: 20px; padding: 12px 10px 12px 14px; box-shadow: 0 16px 40px -18px rgba(31, 45, 61, 0.45); animation: sheetup 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.gift-card > div { min-width: 0; }
+.gift-card .rub { margin: 0 0 2px; }
+.gift-card b { display: block; font-family: var(--serif); font-size: 20px; font-weight: 500; line-height: 1.15; }
+.gift-card p { font-size: 13.5px; color: var(--ink2); margin: 4px 0 0; }
