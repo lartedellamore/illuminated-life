@@ -10,3 +10,8 @@ A single-file study app built on the two best-supported study methods: retrieval
 Data is stored in the browser's localStorage on one device. Use the backup on the setup screen to move it.
 
 Open `study/index.html` directly, or serve the repository and visit `/study/`.
+
+## Added
+
+- **Points and levels**, a multiple-choice **sprint** warm-up, and light animations (off when the device asks for reduced motion).
+- **Make cards from a PDF**: reads up to 30 pages in the browser and asks Claude to write cards. This only works when the app is opened inside Claude; on a plain web host the option explains that and stays hidden.
