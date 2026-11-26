@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recall Study App</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: one phone-width column with a fixed tab bar. White cards on pale mist, pastel accents, gold hairlines. Single light theme by choice. */
+  color-scheme:light;
+  --paper:#ffffff; --mist:#f2f8fb; --ink:#2e5561; --soft:#557a85; --line:#dcebf0;
+  --gold:#b3925a; --gold-text:#8a6c3c; --sky:#cfe6f3; --sage:#d5ead9; --rose:#f7dbe2; --peach:#fbe3cf; --cream:#f6ecc9; --lilac:#e7dbf3;
+  --display:"Cormorant Garamond","Iowan Old Style",Georgia,serif;
+  --body:"Figtree","Avenir Next","Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--mist);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+#app{max-width:520px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+main{flex:1;padding:28px 20px 110px;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:36px;line-height:1.05} h2{font-size:26px;line-height:1.15}
+p{margin:0}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--gold-text)}
+.soft{color:var(--soft);font-size:14px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.gilded{border-top:2px solid var(--gold)}
+.tint{border:0;border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:12px;align-items:center;justify-content:space-between;min-width:0}
+.big{font-family:var(--display);font-size:42px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+button,input,textarea,select{font:inherit;color:var(--ink)}
+button{cursor:pointer}
+.btn{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:999px;border:0;background:var(--ink);color:#fff;font-weight:600;padding:0 22px;width:100%}
+.btn.ghost{background:var(--paper);color:var(--ink);border:1px solid var(--gold);min-height:46px}
+.btn.small{width:auto;min-height:44px;padding:0 16px;font-size:14px}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+input[type=text],input[type=date],textarea,select{width:100%;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--paper)}
+textarea{resize:vertical;min-height:96px}
+label{font-size:13px;font-weight:600;display:flex;flex-direction:column;gap:6px}
+.chips{display:flex;gap:6px}
+.chips span{flex:1;text-align:center;padding:8px 0;border-radius:12px;font-size:13px;font-weight:600}
+.rates{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.rate{min-height:60px;border:0;border-radius:16px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.rate small{font-size:11px;font-weight:500}
+.track{height:10px;border-radius:10px;background:var(--mist);border:1px solid var(--line);overflow:hidden}
+.track i{display:block;height:100%;border-radius:10px;box-shadow:inset 0 0 0 1px var(--gold)}
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .q{font-weight:500}
+.x{flex:none;border:0;background:transparent;color:var(--soft);min-width:44px;min-height:44px;border-radius:12px;font-size:13px;font-weight:600}
+.x:hover{background:var(--mist)}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--line)}
+nav div{max-width:520px;margin:0 auto;display:flex;padding:8px 12px calc(10px + env(safe-area-inset-bottom,0px))}
+nav a{flex:1;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-decoration:none;font-size:12px;font-weight:600;color:var(--soft)}
+nav a i{width:22px;height:3px;border-radius:3px;background:transparent}
+nav a[aria-current=page]{color:var(--ink)} nav a[aria-current=page] i{background:var(--gold)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tiles .tint{gap:2px;padding:14px}
+ol.method{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+a.link{color:var(--ink);font-weight:600}
+</style>
+</head>
+<body>
+<div id="app"><main id="view"></main>
+<nav aria-label="Main"><div id="tabs"></div></nav></div>
+<script>
+(function(){
+'use strict';
+var DAY=864e5, STEPS=[1,3,7,14,30,60,120], KEY='recall-study-v1';
+var TABS=[['today','Today'],['recall','Recall'],['cards','Cards'],['progress','Progress']];
+var STARTER=[
+ ['What builds memory better: rereading a chapter, or closing the book and recalling it?','Recalling it. Retrieval practice beats rereading for long-term memory, even though rereading feels smoother.'],
+ ['What is the spacing effect?','The same study time produces more lasting memory when it is spread over days and weeks instead of crammed into one session.'],
+ ['Roughly how many new items can working memory hold at once?','About four. It is the narrow door through which all new learning passes.'],
+ ['What is interleaving, and why does it help?','Mixing related topics or problem types in one session. It trains you to recognise which kind of problem you face.'],
+ ['What is a desirable difficulty?','An effort during study that slows you down now and strengthens memory later, such as recalling, spacing and mixing topics.'],
+ ['Why is the feeling of knowing something a poor guide?','Familiarity from rereading is easily mistaken for the ability to recall. Only a test from memory shows what you know.'],
+ ['What are the four parts of deliberate practice?','A clear goal just beyond your level, full concentration, immediate feedback, and repetition with correction.'],
+ ['What does sleep do for learning?','During sleep the brain replays and strengthens new memories and files them into long-term storage.'],
+ ['What kind of plan makes it most likely you will actually study?','An if-then plan tied to a time and place: when X happens, I will do Y.'],
+ ['Which two study techniques were rated most useful in the large 2013 review?','Practice testing and spaced practice.']
+];
+var METHOD=['Recall before you reread.','Spread sessions over days.','Mix chapters in one session.','Explain each idea in your own words.','Expect good study to feel effortful.','Predict your score, then compare.','One thing at a time, phone away.','Sleep on it.'];
+
+/* ---------- storage ---------- */
+var state=null, memoryOnly=false;
+function load(){
+  try{var s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s&&s.cards) return s;}catch(e){memoryOnly=true;}
+  var now=Date.now();
+  return {exam:{name:'',date:''},cards:STARTER.map(function(c,i){return card('How learning works',c[0],c[1],now+i);}),sessions:[],log:{},dumps:{}};
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){memoryOnly=true;}}
+function card(ch,q,a,id){return {id:String(id||Date.now()+Math.random()),ch:ch,q:q,a:a,step:0,due:0,n:0,ok:0};}
+state=load();
+
+/* ---------- helpers ---------- */
+function h(tag,attrs,kids){
+  var e=document.createElement(tag),k,v;
+  if(attrs) for(k in attrs){v=attrs[k];
+    if(k==='class') e.className=v; else if(k==='text') e.textContent=v;
+    else if(k==='style') e.style.cssText=v; else if(k==='value') e.value=v;
+    else if(k.slice(0,2)==='on') e.addEventListener(k.slice(2),v);
+    else if(v!==false&&v!=null) e.setAttribute(k,v);}
+  (kids||[]).forEach(function(c){if(c) e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function dkey(t){var d=new Date(t);return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+function due(){var now=Date.now();return state.cards.filter(function(c){return c.due<=now;});}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function daysLeft(){if(!state.exam.date) return null;var p=state.exam.date.split('-');var d=new Date(+p[0],p[1]-1,+p[2]);var t=new Date();t=new Date(t.getFullYear(),t.getMonth(),t.getDate());return Math.round((d-t)/DAY);}
+function streak(){var n=0,t=Date.now();if(!state.log[dkey(t)]) t-=DAY;while(state.log[dkey(t)]){n++;t-=DAY;}return n;}
+function fmtDate(t){return new Date(t).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});}
+function chapters(){var m={};state.cards.forEach(function(c){m[c.ch]=1;});return Object.keys(m).sort();}
+function schedule(c,r){
+  var now=Date.now();
+  if(r===0){c.step=0;c.due=now+10*60000;}
+  else if(r===1){c.due=now+Math.max(1,Math.round(STEPS[Math.min(c.step,STEPS.length-1)]/2))*DAY;}
+  else{var s=Math.min(c.step+(r===3?1:0),STEPS.length-1);c.due=now+STEPS[s]*DAY;c.step=Math.min(s+1,STEPS.length-1);}
+}
+function nextLabel(c,r){
+  if(r===0) return '10 min';
+  var d=r===1?Math.max(1,Math.round(STEPS[Math.min(c.step,STEPS.length-1)]/2)):STEPS[Math.min(c.step+(r===3?1:0),STEPS.length-1)];
+  return d+(d===1?' day':' days');
+}
+
+/* ---------- session ---------- */
+var S=null, predicted=70, armed=null;
+function start(cards,ahead){S={queue:shuffle(cards),i:0,shown:false,first:{},n:cards.length,right:0,ahead:!!ahead,predicted:predicted,answer:''};render();}
+function rate(r){
+  var c=S.queue[S.i];
+  if(!(c.id in S.first)){S.first[c.id]=r;c.n++;if(r>=2){c.ok++;S.right++;}state.log[dkey(Date.now())]=(state.log[dkey(Date.now())]||0)+1;}
+  if(!S.ahead) schedule(c,r);
+  if(r===0) S.queue.push(c);
+  S.i++;S.shown=false;S.answer='';
+  if(S.i>=S.queue.length){state.sessions.push({t:Date.now(),predicted:S.predicted,n:S.n,right:S.right});if(state.sessions.length>60)state.sessions.shift();S.done=true;}
+  save();render();
+}
+
+/* ---------- views ---------- */
+function vToday(){
+  var d=due().length, left=daysLeft(), key=dkey(Date.now());
+  var kids=[h('div',null,[h('div',{class:'eyebrow',text:fmtDate(Date.now())}),h('h1',{text:'Today\'s study'})])];
+  if(state.exam.name||state.exam.date){
+    kids.push(h('div',{class:'card gilded'},[h('div',{class:'row'},[
+      h('div',null,[h('div',{style:'font-weight:600',text:state.exam.name||'My exam'}),h('div',{class:'soft',text:state.exam.date?'Exam on '+new Date(state.exam.date+'T12:00').toLocaleDateString('en-GB',{day:'numeric',month:'long'}):'No date set'})]),
+      left!==null?h('div',{style:'text-align:right'},[h('div',{class:'big',text:String(Math.max(left,0))}),h('div',{class:'soft',text:left===1?'day left':'days left'})]):null])]));
+  }else{
+    kids.push(h('div',{class:'card gilded'},[h('p',{text:'Set your exam name and date to see the countdown.'}),h('a',{class:'btn ghost',href:'#setup',text:'Set up my exam'})]));
+  }
+  kids.push(h('div',{class:'tint',style:'background:var(--sage)'},[
+    h('div',{class:'eyebrow',text:'1 · Recall first'}),
+    h('div',{style:'display:flex;align-items:baseline;gap:8px'},[h('span',{class:'big',text:String(d)}),h('span',{text:d===1?'card is due':'cards are due'})]),
+    h('a',{class:'btn',href:'#recall',text:d?'Start recall':'Open recall'})]));
+  kids.push(h('div',{class:'card'},[
+    h('div',{class:'eyebrow',text:'2 · Then learn one new thing'}),
+    h('p',{text:'Read one section with full attention. Turn each key idea into a card.'}),
+    h('a',{class:'btn ghost',href:'#cards',text:'Add cards'})]));
+  var dump=h('textarea',{id:'dump','aria-label':'Everything I remember from today',placeholder:'Close the book. Write everything you remember, then check.',value:state.dumps[key]||'',onchange:function(){state.dumps={};state.dumps[key]=this.value;save();}});
+  kids.push(h('div',{class:'card'},[h('div',{class:'eyebrow',text:'3 · Close the book'}),dump]));
+  kids.push(h('div',null,[h('div',{class:'eyebrow',style:'margin-bottom:8px',text:'A card you know comes back after'}),
+    h('div',{class:'chips'},[['1 day','sky'],['3','lilac'],['7','rose'],['14','peach'],['30','cream']].map(function(x){return h('span',{style:'background:var(--'+x[1]+')',text:x[0]});}))]));
+  kids.push(h('div',{class:'card'},[h('div',{class:'eyebrow',text:'The method in eight lines'}),h('ol',{class:'method'},METHOD.map(function(m){return h('li',{text:m});})),
+    h('a',{class:'link',href:'#setup',text:'Exam, backup and reset'})]));
+  if(memoryOnly) kids.push(h('p',{class:'soft',text:'This browser is not letting the app save. Your cards will be lost when you close the page; copy a backup from the setup screen.'}));
+  return kids;
+}
+function vRecall(){
+  if(S&&S.done){
+    var pct=Math.round(100*S.right/S.n), gap=S.predicted-pct, s=S;
+    return [h('div',null,[h('div',{class:'eyebrow',text:'Session finished'}),h('h1',{text:'How it went'})]),
+      h('div',{class:'tiles'},[h('div',{class:'tint',style:'background:var(--cream)'},[h('div',{style:'font-size:12px;font-weight:600',text:'You predicted'}),h('div',{class:'big',text:s.predicted+'%'})]),
+        h('div',{class:'tint',style:'background:var(--sage)'},[h('div',{style:'font-size:12px;font-weight:600',text:'You recalled'}),h('div',{class:'big',text:pct+'%'})])]),
+      h('p',{text:s.right+' of '+s.n+' recalled at the first attempt. '+(Math.abs(gap)<=10?'Your prediction was close: you judge your own knowledge well.':gap>0?'You expected '+gap+' points more than you recalled. Trust the test, not the feeling.':'You recalled '+(-gap)+' points more than you expected.')}),
+      h('button',{class:'btn',type:'button',text:'Done',onclick:function(){S=null;location.hash='#progress';render();}})];
+  }
+  if(S){
+    var c=S.queue[S.i], kids=[
+      h('div',{class:'row'},[h('div',{class:'eyebrow',text:'Card '+(S.i+1)+' of '+S.queue.length+(S.ahead?' · practice':'')}),h('button',{class:'x',type:'button',text:'Stop',onclick:function(){S=null;render();}})]),
+      h('div',{class:'track',role:'img','aria-label':S.i+' of '+S.queue.length+' done'},[h('i',{style:'width:'+Math.round(100*S.i/S.queue.length)+'%;background:var(--gold)'})]),
+      h('div',{class:'card gilded'},[h('div',{class:'soft',text:c.ch}),h('h2',{text:c.q})])];
+    if(!S.shown){
+      kids.push(h('label',{for:'ans'},['Answer from memory before you look',h('textarea',{id:'ans',value:S.answer,oninput:function(){S.answer=this.value;}})]));
+      kids.push(h('button',{class:'btn',type:'button',text:'Show the answer',onclick:function(){S.shown=true;render();}}));
+    }else{
+      if(S.answer.trim()) kids.push(h('div',{class:'card'},[h('div',{class:'eyebrow',text:'You wrote'}),h('p',{text:S.answer})]));
+      kids.push(h('div',{class:'tint',style:'background:var(--sky)'},[h('div',{class:'eyebrow',text:'The answer'}),h('p',{text:c.a})]));
+      kids.push(h('div',{class:'eyebrow',text:'How well did you recall it?'}));
+      kids.push(h('div',{class:'rates'},[['Again','rose'],['Hard','peach'],['Good','sage'],['Easy','sky']].map(function(x,r){
+        return h('button',{class:'rate',type:'button',style:'background:var(--'+x[1]+')',onclick:function(){rate(r);}},[x[0],h('small',{text:S.ahead?(r===0?'repeat':''):nextLabel(c,r)})]);})));
+    }
+    return kids;
+  }
+  var d=due(), out=[h('div',null,[h('div',{class:'eyebrow',text:'Retrieval practice'}),h('h1',{text:'Recall'})])];
+  if(!state.cards.length){out.push(h('div',{class:'card'},[h('p',{text:'You have no cards yet.'}),h('a',{class:'btn',href:'#cards',text:'Add your first cards'})]));return out;}
+  var val=h('span',{class:'big',text:predicted+'%'});
+  var pred=h('div',{class:'card'},[h('label',{for:'pred'},['Before you start: what share will you recall?']),val,
+    h('input',{type:'range',id:'pred',min:'0',max:'100',step:'5',value:String(predicted),style:'width:100%',oninput:function(){predicted=+this.value;val.textContent=predicted+'%';}})]);
+  if(d.length){
+    out.push(h('div',{class:'tint',style:'background:var(--sage)'},[h('div',{style:'display:flex;align-items:baseline;gap:8px'},[h('span',{class:'big',text:String(d.length)}),h('span',{text:(d.length===1?'card is due':'cards are due')+', mixed across chapters'})])]));
+    out.push(pred);
+    out.push(h('button',{class:'btn',type:'button',text:'Start recall',onclick:function(){start(d,false);}}));
+  }else{
+    var next=Math.min.apply(null,state.cards.map(function(c){return c.due;}));
+    out.push(h('div',{class:'card gilded'},[h('h2',{text:'Nothing is due'}),h('p',{text:'Your next card comes back on '+fmtDate(next)+'. Waiting is part of the method: recall works best when the memory has started to fade.'})]));
+    out.push(pred);
+    out.push(h('button',{class:'btn ghost',type:'button',text:'Practise 10 cards anyway',onclick:function(){start(shuffle(state.cards).slice(0,10),true);}}));
+    out.push(h('p',{class:'soft',text:'Practice does not change when your cards come back.'}));
+  }
+  return out;
+}
+function vCards(){
+  var chs=chapters(), out=[h('div',null,[h('div',{class:'eyebrow',text:state.cards.length+' cards in rotation'}),h('h1',{text:'Cards'})])];
+  var ch=h('input',{type:'text',id:'new-ch',list:'chs',placeholder:'e.g. Chapter 8: Conformity',autocomplete:'off'});
+  var q=h('textarea',{id:'new-q',style:'min-height:70px'}), a=h('textarea',{id:'new-a',style:'min-height:70px'});
+  out.push(h('div',{class:'card gilded'},[h('div',{class:'eyebrow',text:'New card'}),
+    h('label',{for:'new-ch'},['Chapter or topic',ch]),h('datalist',{id:'chs'},chs.map(function(c){return h('option',{value:c});})),
+    h('label',{for:'new-q'},['Question',q]),h('label',{for:'new-a'},['Answer, in your own words',a]),
+    h('button',{class:'btn',type:'button',text:'Add card',onclick:function(){
+      if(!q.value.trim()||!a.value.trim()){msg.textContent='Write both a question and an answer.';return;}
+      state.cards.push(card(ch.value.trim()||'General',q.value.trim(),a.value.trim()));save();lastCh=ch.value;render();}}),
+    h('p',{class:'soft',id:'msg',role:'status'})]));
+  var msg=out[1].lastChild; if(lastCh) ch.value=lastCh;
+  var bulk=h('textarea',{id:'bulk',placeholder:'question | answer\nquestion | answer'});
+  var bch=h('input',{type:'text',id:'bulk-ch',list:'chs',autocomplete:'off',placeholder:'Chapter for these cards'});
+  out.push(h('div',{class:'card'},[h('div',{class:'eyebrow',text:'Add many at once'}),h('label',{for:'bulk-ch'},['Chapter or topic',bch]),
+    h('label',{for:'bulk'},['One card per line, question and answer separated by |',bulk]),
+    h('button',{class:'btn ghost',type:'button',text:'Add these cards',onclick:function(){
+      var n=0;bulk.value.split('\n').forEach(function(l,i){var p=l.split('|');if(p.length>=2&&p[0].trim()&&p.slice(1).join('|').trim()){state.cards.push(card(bch.value.trim()||'General',p[0].trim(),p.slice(1).join('|').trim(),Date.now()+'-'+i));n++;}});
+      if(n){save();render();}}})]));
+  chs.forEach(function(name){
+    var list=state.cards.filter(function(c){return c.ch===name;});
+    out.push(h('div',{class:'card'},[h('div',{class:'eyebrow',text:name+' · '+list.length}),h('div',{class:'list'},list.map(function(c){
+      return h('div',{class:'item'},[h('div',{style:'flex:1;min-width:0'},[h('div',{class:'q',text:c.q}),h('div',{class:'soft',text:c.a})]),
+        h('button',{class:'x',type:'button',text:armed===c.id?'Sure?':'Delete','aria-label':'Delete card: '+c.q,onclick:function(){
+          if(armed!==c.id){armed=c.id;render();return;}
+          armed=null;state.cards=state.cards.filter(function(k){return k.id!==c.id;});save();render();}})]);}))]));
+  });
+  return out;
+}
+var lastCh='';
+function vProgress(){
+  var out=[h('div',null,[h('div',{class:'eyebrow',text:'Where you actually stand'}),h('h1',{text:'Progress'})])];
+  var ss=state.sessions.slice(-5);
+  if(!ss.length){out.push(h('div',{class:'card gilded'},[h('p',{text:'Finish one recall session and your numbers appear here.'}),h('a',{class:'btn',href:'#recall',text:'Go to recall'})]));}
+  else{
+    var n=0,r=0,p=0;ss.forEach(function(s){n+=s.n;r+=s.right;p+=s.predicted*s.n;});
+    var act=Math.round(100*r/n), pr=Math.round(p/n), gap=pr-act;
+    out.push(h('div',{class:'tiles'},[h('div',{class:'tint',style:'background:var(--cream)'},[h('div',{style:'font-size:12px;font-weight:600',text:'You predicted'}),h('div',{class:'big',text:pr+'%'})]),
+      h('div',{class:'tint',style:'background:var(--sage)'},[h('div',{style:'font-size:12px;font-weight:600',text:'You recalled'}),h('div',{class:'big',text:act+'%'})])]));
+    out.push(h('p',{class:'soft',text:'Over your last '+ss.length+(ss.length===1?' session. ':' sessions. ')+(Math.abs(gap)<=10?'Your predictions are close to reality.':gap>0?'You overestimate by '+gap+' points. Trust the right-hand number.':'You underestimate by '+(-gap)+' points.')}));
+  }
+  var rows=chapters().map(function(name){var a=0,b=0;state.cards.forEach(function(c){if(c.ch===name){a+=c.n;b+=c.ok;}});return {name:name,n:a,pct:a?Math.round(100*b/a):null};}).filter(function(x){return x.n;});
+  if(rows.length){
+    rows.sort(function(a,b){return b.pct-a.pct;});
+    out.push(h('div',{class:'card'},[h('div',{class:'eyebrow',text:'Recall by chapter'})].concat(rows.map(function(x){
+      var col=x.pct>=75?'sage':x.pct>=60?'sky':x.pct>=45?'peach':'rose';
+      return h('div',null,[h('div',{class:'row',style:'font-size:14px;margin-bottom:5px'},[h('span',{text:x.name}),h('span',{style:'font-weight:600',text:x.pct+'%'})]),
+        h('div',{class:'track',role:'img','aria-label':x.name+': '+x.pct+' percent recalled'},[h('i',{style:'width:'+x.pct+'%;background:var(--'+col+')'})])]);}))));
+    var weak=rows[rows.length-1];
+    if(rows.length>1) out.push(h('div',{class:'card'},[h('div',{class:'eyebrow',text:'Work on next'}),h('p',{style:'font-weight:500',text:weak.name+' is your weakest chapter. Reread it once, then make and recall more cards from it.'})]));
+  }
+  var st=streak();
+  out.push(h('div',{class:'row soft'},[h('span',{text:st+(st===1?' day':' days')+' studied in a row'}),h('span',{text:state.cards.length+' cards in rotation'})]));
+  return out;
+}
+function vSetup(){
+  var name=h('input',{type:'text',id:'ex-name',value:state.exam.name,placeholder:'e.g. Sociale Psychologie',autocomplete:'off',onchange:function(){state.exam.name=this.value.trim();save();}});
+  var date=h('input',{type:'date',id:'ex-date',value:state.exam.date,onchange:function(){state.exam.date=this.value;save();}});
+  var box=h('textarea',{id:'backup','aria-label':'Backup text',placeholder:'Your backup appears here. To restore, paste a backup and press Restore.'});
+  var note=h('p',{class:'soft',role:'status'});
+  return [h('div',null,[h('div',{class:'eyebrow',text:'Setup'}),h('h1',{text:'Exam and backup'})]),
+    h('div',{class:'card gilded'},[h('label',{for:'ex-name'},['Exam or course',name]),h('label',{for:'ex-date'},['Exam date',date]),h('a',{class:'btn',href:'#today',text:'Save and go to today'})]),
+    h('div',{class:'card'},[h('div',{class:'eyebrow',text:'Backup'}),h('p',{class:'soft',text:'Your cards live in this browser on this device only. Keep a backup somewhere safe, such as a note.'}),box,
+      h('button',{class:'btn ghost',type:'button',text:'Make a backup and copy it',onclick:function(){box.value=JSON.stringify(state);box.select();
+        try{navigator.clipboard.writeText(box.value).then(function(){note.textContent='Copied. Paste it into a note to keep it.';},function(){note.textContent='Select the text in the box and copy it.';});}catch(e){note.textContent='Select the text in the box and copy it.';}}}),
+      h('button',{class:'btn ghost',type:'button',text:'Restore from the text in the box',onclick:function(){
+        try{var s=JSON.parse(box.value);if(!s||!Array.isArray(s.cards)) throw 0;s.exam=s.exam||{name:'',date:''};s.sessions=s.sessions||[];s.log=s.log||{};s.dumps=s.dumps||{};state=s;save();note.textContent='Restored '+s.cards.length+' cards.';}
+        catch(e){note.textContent='That text is not a valid backup. Paste the whole backup and try again.';}}}),note]),
+    h('div',{class:'card'},[h('div',{class:'eyebrow',text:'Start over'}),
+      h('button',{class:'btn ghost',type:'button',text:armed==='reset'?'Tap again to erase everything':'Erase all cards and progress',onclick:function(){
+        if(armed!=='reset'){armed='reset';render();return;}
+        armed=null;try{localStorage.removeItem(KEY);}catch(e){}state=load();save();location.hash='#today';render();}})])];
+}
+
+var VIEWS={today:vToday,recall:vRecall,cards:vCards,progress:vProgress,setup:vSetup};
+function route(){var r=(location.hash||'').slice(1);return VIEWS[r]?r:'today';}
+function render(){
+  var r=route(), v=document.getElementById('view'); v.textContent='';
+  VIEWS[r]().forEach(function(k){if(k) v.appendChild(k);});
+  var t=document.getElementById('tabs'); t.textContent='';
+  TABS.forEach(function(x){var a=h('a',{href:'#'+x[0]},[h('i'),x[1]]); if(x[0]===r) a.setAttribute('aria-current','page'); t.appendChild(a);});
+}
+window.addEventListener('hashchange',function(){armed=null;window.scrollTo(0,0);render();});
+save();render();
+})();
+</script>
+</body>
+</html>
