@@ -825,3 +825,6 @@ body { background: var(--paper); background-image: radial-gradient(120% 70% at 5
 .gift-card .rub { margin: 0 0 2px; }
 .gift-card b { display: block; font-family: var(--serif); font-size: 20px; font-weight: 500; line-height: 1.15; }
 .gift-card p { font-size: 13.5px; color: var(--ink2); margin: 4px 0 0; }
+
+.foot-motto { text-align: center; font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--dim); margin: 28px 0 8px; }
+@media print { .foot-motto { display: none; } }

@@ -1285,7 +1285,7 @@
     const screen = (SCREENS[ui.tab] || Today)();
     const pv = PhotoSheet(), still = pv ? " inert" : ""; // while a photograph is open, the page behind it is at rest
     root.innerHTML = `<header class="top"${still}>${PREVIEW ? `<span class="mark">Illuminated Life</span>` : `<a class="mark" href="index.html" title="About the book and the app">Illuminated Life</a>`}<button class="season-chip" data-act="sub" data-s="year" aria-label="Today: ${esc(L.lineText(today))}. Open the calendar"><span class="sc-text"><b>${bead(today.colour)}${esc(tl.title)}</b>${tl.sub ? `<span>${esc(tl.sub)}</span>` : ""}</span></button></header>
-      <main class="body ${o.nav ? "rise" : ""}" id="main"${still}>${screen}</main>
+      <main class="body ${o.nav ? "rise" : ""}" id="main"${still}>${screen}<p class="foot-motto">Everything you hold, held as a gift.</p></main>
       <div class="toast" id="toast" role="status" ${ui.toast ? "" : "hidden"}>${esc(ui.toast || "")}</div>
       ${ui.updated && !ui.later.update ? `<div class="update" id="update" role="status"><span>Updated.</span><button class="link" data-act="reload">Reload</button><button class="link dim" data-act="later" data-k="update">Later</button></div>` : ""}
       <nav class="tabbar" aria-label="Sections"${still}>${NAV.map(([id, label, ic]) => `<button data-act="tab" data-t="${id}" ${ui.tab === id ? 'aria-current="page"' : ""}>${icon(ic, 22)}<span>${label}</span></button>`).join("")}</nav>
