@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The one window of Illuminated Life",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
