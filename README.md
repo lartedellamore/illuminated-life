@@ -1,6 +1,6 @@
 # Illuminated Life
 
-For a virtuous lifestyle rooted in the holiness of Christ. A Catholic rule of life in eight fields, 0 to 7: a website, the book *Illuminated: The Image of God, Embodied* (PDF), and its companion app, a digital chapel.
+Be holy, for I am holy. A Catholic rule of life in eight fields, 0 to 7: a website, the book *Illuminated: The Image of God, Embodied* (PDF), and its companion app, a digital chapel.
 
 Live: https://app.lartedellamore.com/ (the app itself is at /app.html)
 
